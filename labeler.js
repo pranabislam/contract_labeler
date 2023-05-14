@@ -1,36 +1,63 @@
 function getXPathsForSelectedText() {
-  let xpaths = [];
-
-  let selection = window.getSelection();
-  if (selection.rangeCount) {
-    let range = selection.getRangeAt(0);
-    let startNode = range.startContainer.parentNode.parentNode;
-    let endNode = range.endContainer.parentNode.parentNode;
-    let nodeList = [];
-    console.log(range.startContainer);
-    console.log(range.commonAncestorContainer);
-    console.log(startNode);
-    while(startNode != endNode.nextElementSibling && startNode != null){
-      
-      
-      if (startNode.innerText.length == 1){
-        startNode = startNode.nextElementSibling;
-        continue;
+    let sel = window.getSelection();
+    let range = sel.getRangeAt(0);
+    let container = range.commonAncestorContainer;
+    let nodeXPaths = [];
+  
+    function getXPath(node) {
+      let xpath = '';
+      for (; node && node.nodeType == Node.ELEMENT_NODE; node = node.parentNode) {
+        let siblings = Array.from(node.parentNode.childNodes).filter(sibling => sibling.nodeName === node.nodeName);
+        if (siblings.length > 1) {
+          let index = siblings.indexOf(node) + 1;
+          xpath = `/${node.nodeName.toLowerCase()}[${index}]${xpath}`;
+        } else {
+          xpath = `/${node.nodeName.toLowerCase()}${xpath}`;
+        }
       }
-      nodeList.push(startNode.firstChild);
-      startNode = startNode.nextElementSibling;
+      return xpath;
     }
-
-    for(let i = 0; i < nodeList.length; i++){
-      let xpath_ = getXPath(nodeList[i]);
-      xpaths.push(xpath_);
+  
+    function traverse(node) {
+      if (range.intersectsNode(node)) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          if (node.textContent.trim().length > 0) {
+            nodeXPaths.push(getXPath(node.parentNode));
+          }
+        } else {
+          if (node.childNodes.length > 0) {
+            for (let i = 0; i < node.childNodes.length; i++) {
+              traverse(node.childNodes[i]);
+            }
+          } else {
+            if (node.textContent.trim().length > 0) {
+              nodeXPaths.push(getXPath(node));
+            }
+          }
+        }
+      }
     }
-  }
-  full_path_list = xpaths[0].split('/');
-  console.log(xpaths);
-  return xpaths;
+  
+    traverse(container);
+  
+    return nodeXPaths;
 }
-
+    
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'e') {
+    event.preventDefault();
+    const xpaths = getXPathsForSelectedText()
+    console.log("+++++++++++++++++++++")
+    console.log(xpaths)
+    console.log("+++++++++++++++++++++")
+    for (var i = 0; i < xpaths.length; i++) { 
+        var selectedElement = document.evaluate(xpaths[i], document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        console.log(selectedElement.textContent)
+    }
+    console.log("++++++++++++")
+    }
+});
+    
 var old_highlighted_texts = [];
 var old_xpaths = [];
 
