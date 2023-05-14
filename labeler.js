@@ -1,3 +1,73 @@
+function removeHighlightBox(highlightBox) {
+    
+    // Remove highlightBox from the DOM
+    highlightBox.remove();
+}
+
+// I think I need to feed in XPATHS! and the text to highlight would work too -- its all indexed?
+function highlightText(selectionRange, label, idx) {
+    const rect = selectionRange.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const top_ = rect.top + scrollTop;
+    const left = rect.left + scrollLeft;
+    
+    // Create a new highlight box element
+    const highlightBox = document.createElement('div');
+    highlightBox.style.position = 'absolute';
+    highlightBox.style.top = top_ + 'px';
+    highlightBox.style.left = left + 'px';
+    highlightBox.style.width = rect.width + 'px';
+    highlightBox.style.height = rect.height + 'px';
+    highlightBox.style.backgroundColor = 'yellow';
+    highlightBox.style.opacity = '0.5';
+    highlightBox.style.zIndex = '99999'; // Set a high z-index value
+    
+    const labelAttribute = document.createAttribute("label");
+    labelAttribute.value = label;
+    highlightBox.setAttributeNode(labelAttribute);
+
+    const idxAttribute = document.createAttribute("idx");
+    idxAttribute.value = idx;
+    highlightBox.setAttributeNode(idxAttribute);
+    
+    // Add event listener to retrieve and print label property on click
+    highlightBox.addEventListener('click', () => {
+        const label = highlightBox.getAttribute('label');
+        console.log(label);
+
+        // Toggle the selected state of the highlight box only if it is not already selected
+        const isSelected = highlightBox.getAttribute('selected') === 'true';
+        if (!isSelected) {
+            highlightBox.setAttribute('selected', 'true');
+            highlightBox.style.border = '2px solid red'; // Add red border when selected
+
+            // Create a dialog box to delete the highlight box
+            highlightBox.dialogBox = window.open("", "Delete Highlight Box", "height=200,width=400");
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.style.margin = '10px';
+            deleteButton.addEventListener('click', () => {
+                removeHighlightBox(highlightBox);
+                highlightBox.dialogBox.close();
+            });
+            highlightBox.dialogBox.document.body.appendChild(deleteButton);
+        }
+    });
+
+    // Add event listener to remove red border when de-selected
+    document.addEventListener('click', (event) => {
+        if (!highlightBox.contains(event.target)) {
+        highlightBox.setAttribute('selected', 'false');
+        highlightBox.style.border = 'none'; // Remove red border when de-selected
+        if (highlightBox.dialogBox && !highlightBox.dialogBox.close){ // if dialog box is still open but we select anotherhighlightbox
+            highlightBox.dialogBox.close();
+        }
+    }
+    });
+    return highlightBox
+}
+
 function getXPathsForSelectedText() {
     let sel = window.getSelection();
     let range = sel.getRangeAt(0);
@@ -43,20 +113,6 @@ function getXPathsForSelectedText() {
     return nodeXPaths;
 }
     
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'e') {
-    event.preventDefault();
-    const xpaths = getXPathsForSelectedText()
-    console.log("+++++++++++++++++++++")
-    console.log(xpaths)
-    console.log("+++++++++++++++++++++")
-    for (var i = 0; i < xpaths.length; i++) { 
-        var selectedElement = document.evaluate(xpaths[i], document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-        console.log(selectedElement.textContent)
-    }
-    console.log("++++++++++++")
-    }
-});
     
 var old_highlighted_texts = [];
 var old_xpaths = [];
@@ -64,42 +120,7 @@ var old_xpaths = [];
 localStorage.setItem('text', JSON.stringify(old_highlighted_texts));
 localStorage.setItem('xpaths', JSON.stringify(old_xpaths));
 
-const getMethods = (obj) => {
-  let properties = new Set()
-  let currentObj = obj
-  do {
-    Object.getOwnPropertyNames(currentObj).map(item => properties.add(item))
-  } while ((currentObj = Object.getPrototypeOf(currentObj)))
-  return [...properties.keys()].filter(item => typeof obj[item] === 'function')
-}
 
-function getXPath(node) {
-  let xpath = '';
-  let count;
-  while (node != null && node.nodeType != Node.DOCUMENT_NODE) {
-    let id = node.id ? `[@id="${node.id}"]` : '';
-    let nodeName = node.nodeName.toLowerCase();
-    let siblings = [...node.parentNode.children].filter(n => n.nodeName === nodeName);
-    counter = 0;
-    
-    for (const child of node.parentNode.children) {
-      lcName = child.nodeName.toLowerCase();
-      if (lcName === nodeName) {
-        counter += 1;
-        if (child.isEqualNode(node)) {
-          break;
-        }
-      }
-    }
-    if (counter > 1) {
-      xpath = `/${nodeName}[${counter}]${xpath}`;
-    } else {
-      xpath = `/${nodeName}${xpath}`;
-    }
-    node = node.parentNode;
-  }
-  return xpath;
-}
 let isMenuOpen = false;
 let mouseX;
 let mouseY;
@@ -112,15 +133,23 @@ function downloadObjectAsJson(exportObj, exportName) {
   document.body.appendChild(downloadAnchorNode); // required for firefox
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
-}
+}  
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'e') {
     event.preventDefault();
     const highlightedText = window.getSelection().toString();
+    let selectionRange = window.getSelection().getRangeAt(0);
     highlightedNodeText = [...highlightedText.split('\n\n')].filter(text => text.length != 1).map(text => text.trim());
     const xpaths = getXPathsForSelectedText();
+    console.log("Xpaths below");
+    console.log(xpaths);
+    console.log('Highlighted node text below');
     console.log(highlightedNodeText);
+    console.log('Highlighted text before processing below');
+    console.log(highlightedText);
+    console.log("++++++++++++++++++")
+    console.log("-+-+-+-+-+-+-+-+--+")
     old_highlighted_texts = JSON.parse(localStorage.getItem('text'));
     old_xpaths = JSON.parse(localStorage.getItem('xpaths'));
 
@@ -164,9 +193,21 @@ document.addEventListener('keydown', (event) => {
           isMenuOpen = false;
           label = labelnm[i];
           menuWindow.close();
+          
+          console.log("xxx")
+          console.log(highlightedNodeText);
+          console.log("xxxx")
+
+        var highlightBox = highlightText(
+            selectionRange,
+            selectedOption,
+            old_xpaths.length
+        );
+        document.body.appendChild(highlightBox);
         });
         dialog.appendChild(lb);
       }
+      
     }
 
     old_highlighted_texts.push(highlightedNodeText);
