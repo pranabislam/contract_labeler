@@ -2,6 +2,28 @@ function removeHighlightBox(highlightBox) {
     
     // Remove highlightBox from the DOM
     highlightBox.remove();
+    // Remove text entry from local storage
+    highlighted_texts = JSON.parse(localStorage.getItem('text'));
+    xpaths = JSON.parse(localStorage.getItem('xpaths'));
+    
+    const delete_idx = highlightBox.getAttribute('idx');
+
+    highlighted_texts[delete_idx] = 'DELETED';
+    xpaths[delete_idx] = 'DELETED';
+    
+    console.log(localStorage['text'])
+    console.log('++++++++++++++++++++++++++++++++++')
+    console.log(localStorage['xpaths'])
+    console.log('++++++++++++++++++++++++++++++++++')
+    // Right now it's very inefficient as we are constantly parsing and iterating through the entire string / list
+    localStorage.setItem('text', JSON.stringify(highlighted_texts));
+    localStorage.setItem('xpaths', JSON.stringify(xpaths));
+    // Delete highlightBox from DOM
+
+    console.log(localStorage['text'])
+    console.log('++++++++++++++++++++++++++++++++++')
+    console.log(localStorage['xpaths'])
+    console.log('++++++++++++++++++++++++++++++++++')
 }
 
 // I think I need to feed in XPATHS! and the text to highlight would work too -- its all indexed?
