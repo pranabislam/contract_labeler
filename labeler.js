@@ -254,8 +254,7 @@ document.addEventListener('keydown', (event) => {
           labels = JSON.parse(localStorage.getItem('labels'));
           labels.push(label);
           localStorage.setItem('labels', JSON.stringify(labels));
-          console.log(labels);
-          
+
           menuWindow.close();
 
         var highlightBox = highlightText(
