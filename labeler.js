@@ -5,25 +5,18 @@ function removeHighlightBox(highlightBox) {
     // Remove text entry from local storage
     highlighted_texts = JSON.parse(localStorage.getItem('text'));
     xpaths = JSON.parse(localStorage.getItem('xpaths'));
+    labels = JSON.parse(localStorage.getItem('labels'));
     
     const delete_idx = highlightBox.getAttribute('idx');
 
     highlighted_texts[delete_idx] = 'DELETED';
     xpaths[delete_idx] = 'DELETED';
+    labels[delete_idx] = 'DELETED';
     
-    console.log(localStorage['text'])
-    console.log('++++++++++++++++++++++++++++++++++')
-    console.log(localStorage['xpaths'])
-    console.log('++++++++++++++++++++++++++++++++++')
-    // Right now it's very inefficient as we are constantly parsing and iterating through the entire string / list
     localStorage.setItem('text', JSON.stringify(highlighted_texts));
     localStorage.setItem('xpaths', JSON.stringify(xpaths));
-    // Delete highlightBox from DOM
+    localStorage.setItem('labels', JSON.stringify(labels));
 
-    console.log(localStorage['text'])
-    console.log('++++++++++++++++++++++++++++++++++')
-    console.log(localStorage['xpaths'])
-    console.log('++++++++++++++++++++++++++++++++++')
 }
 
 // I think I need to feed in XPATHS! and the text to highlight would work too -- its all indexed?
@@ -43,7 +36,7 @@ function highlightText(selectionRange, label, idx, xpaths) {
     highlightBox.style.height = rect.height + 'px';
     highlightBox.style.backgroundColor = 'yellow';
     highlightBox.style.opacity = '0.5';
-    highlightBox.style.zIndex = '99999'; // Set a high z-index value
+    highlightBox.style.zIndex = '99999';
     
     const labelAttribute = document.createAttribute("label");
     labelAttribute.value = label;
@@ -56,9 +49,7 @@ function highlightText(selectionRange, label, idx, xpaths) {
     const xpathsAttribute = document.createAttribute("xpaths");
     xpathsAttribute.value = xpaths;
     highlightBox.setAttributeNode(xpathsAttribute);
-    //console.log("Xpaths associated with highlightbox");
-    //console.log(highlightBox.getAttribute('xpaths'));
-    //console.log("Xpaths associated with highlightbox");
+
     
     // Add event listener to retrieve and print label property on click
     highlightBox.addEventListener('click', () => {
@@ -79,6 +70,17 @@ function highlightText(selectionRange, label, idx, xpaths) {
             deleteButton.addEventListener('click', () => {
                 removeHighlightBox(highlightBox);
                 highlightBox.dialogBox.close();
+            });
+            highlightBox.dialogBox.addEventListener('keydown', (event) => {
+              if (event.key == '1'){
+                removeHighlightBox(highlightBox);
+                highlightBox.dialogBox.close();
+              }
+              if (event.key == '2'){
+                highlightBox.setAttribute('selected', 'false');
+                highlightBox.dialogBox.close();
+              }
+              
             });
             highlightBox.dialogBox.document.body.appendChild(deleteButton);
         }
@@ -170,13 +172,13 @@ function getXPathsAndTextsForSelectedText() {
     return { xpaths: nodeXPaths, selectedTexts: nodeTexts };
   }
     
-    
 var old_highlighted_texts = [];
 var old_xpaths = [];
+var labels = [];
 
 localStorage.setItem('text', JSON.stringify(old_highlighted_texts));
 localStorage.setItem('xpaths', JSON.stringify(old_xpaths));
-
+localStorage.setItem('labels', JSON.stringify(labels));
 
 let isMenuOpen = false;
 let mouseX;
@@ -201,15 +203,7 @@ document.addEventListener('keydown', (event) => {
     const xpaths_text = getXPathsAndTextsForSelectedText();
     const xpaths = xpaths_text.xpaths;
     const chunkedNodeTexts = xpaths_text.selectedTexts;
-    console.log("Xpaths below");
-    console.log(xpaths);
-    console.log('Highlighted node text below');
-    console.log(highlightedNodeText);
-    console.log('Highlighted text before processing below');
-    console.log(highlightedText);
-    console.log("++++----------------++++++++++++++")
-    console.log(chunkedNodeTexts)
-    console.log("-+-+-+-+-+-+-+-+--+")
+
     old_highlighted_texts = JSON.parse(localStorage.getItem('text'));
     old_xpaths = JSON.parse(localStorage.getItem('xpaths'));
 
@@ -222,7 +216,7 @@ document.addEventListener('keydown', (event) => {
       mouseX = event.pageX;
       mouseY = event.pageY;
       console.log('opening label selector!')
-      const menuWindow = window.open("", "Dialog Box", `width=400,height=200,top=${mouseY},left=${mouseX}`);
+      const menuWindow = window.open("", "Dialog Box", `width=400,height=500,top=${mouseY},left=${mouseX}`);
       const dialog = menuWindow.document.createElement("div");
       dialog.style.display = "flex";
       dialog.style.flexDirection = "column";
@@ -234,15 +228,20 @@ document.addEventListener('keydown', (event) => {
       message.style.fontSize = "20px";
       dialog.appendChild(message);
       
-      const sec_num = menuWindow.document.createElement("button");
-      const sec_title = menuWindow.document.createElement("button");
+      const sec_num0 = menuWindow.document.createElement("button");
+      const sec_title0 = menuWindow.document.createElement("button");
+      const sec_num1 = menuWindow.document.createElement("button");
+      const sec_title1 = menuWindow.document.createElement("button");
+      const sec_num2 = menuWindow.document.createElement("button");
+      const sec_title2 = menuWindow.document.createElement("button");
+      
       const pn = menuWindow.document.createElement("button");
       const ot = menuWindow.document.createElement("button");
       
-      let label_list = [sec_title, sec_num, pn, ot];
+      let label_list = [sec_title0, sec_num0, sec_title1, sec_num1, sec_title2, sec_num2, pn, ot];
       
-      const labelctx = ['SecTitle0', 'SecNum0', 'PageNum', 'Outside'];
-      const labelnm = ['sectitle0', 'secnum0', 'pn', 'ot'];
+      const labelctx = ['SecTitle0', 'SecNum0', 'SecTitle1', 'SecNum1', 'SecTitle2', 'SecNum2', 'PageNum', 'Outside'];
+      const labelnm = ['sectitle0', 'secnum0', 'sectitle1', 'secnum1', 'sectitle2', 'secnum2', 'pn', 'ot'];
       
       for (let i = 0; i < label_list.length; i++){
         lb = label_list[i];
@@ -252,16 +251,17 @@ document.addEventListener('keydown', (event) => {
           selectedOption = labelctx[i];
           isMenuOpen = false;
           label = labelnm[i];
-          menuWindow.close();
+          labels = JSON.parse(localStorage.getItem('labels'));
+          labels.push(label);
+          localStorage.setItem('labels', JSON.stringify(labels));
+          console.log(labels);
           
-          console.log("xxx")
-          console.log(highlightedNodeText);
-          console.log("xxxx")
+          menuWindow.close();
 
         var highlightBox = highlightText(
             selectionRange,
             selectedOption,
-            old_xpaths.length,
+            old_xpaths.length-1,
             xpaths
         );
         document.body.appendChild(highlightBox);
@@ -273,8 +273,11 @@ document.addEventListener('keydown', (event) => {
 
     old_highlighted_texts.push(highlightedNodeText);
     old_xpaths.push(xpaths);
+    
+    
     localStorage.setItem('text', JSON.stringify(old_highlighted_texts));
     localStorage.setItem('xpaths', JSON.stringify(old_xpaths));
+    
   }
 });
 
