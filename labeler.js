@@ -97,11 +97,12 @@ function highlightText(selectionRange, label, idx, xpaths) {
     return highlightBox
 }
 
-function getXPathsForSelectedText() {
+function getXPathsAndTextsForSelectedText() {
     let sel = window.getSelection();
     let range = sel.getRangeAt(0);
     let container = range.commonAncestorContainer;
     let nodeXPaths = [];
+    let nodeTexts = [];
   
     function getXPath(node) {
       let xpath = '';
@@ -121,7 +122,12 @@ function getXPathsForSelectedText() {
       if (range.intersectsNode(node)) {
         if (node.nodeType === Node.TEXT_NODE) {
           if (node.textContent.trim().length > 0) {
-            nodeXPaths.push(getXPath(node.parentNode));
+            let nodeXPath = getXPath(node.parentNode);
+            let nodeText = node.textContent.trim();
+            let startIndex = Math.max(nodeText.indexOf(sel.toString()), 0);
+            let endIndex = Math.min(startIndex + sel.toString().length, nodeText.length);
+            nodeTexts.push(nodeText.substring(startIndex, endIndex));
+            nodeXPaths.push(nodeXPath);
           }
         } else {
           if (node.childNodes.length > 0) {
@@ -130,7 +136,12 @@ function getXPathsForSelectedText() {
             }
           } else {
             if (node.textContent.trim().length > 0) {
-              nodeXPaths.push(getXPath(node));
+              let nodeXPath = getXPath(node);
+              let nodeText = node.textContent.trim();
+              let startIndex = Math.max(nodeText.indexOf(sel.toString()), 0);
+              let endIndex = Math.min(startIndex + sel.toString().length, nodeText.length);
+              nodeTexts.push(nodeText.substring(startIndex, endIndex));
+              nodeXPaths.push(nodeXPath);
             }
           }
         }
@@ -139,8 +150,8 @@ function getXPathsForSelectedText() {
   
     traverse(container);
   
-    return nodeXPaths;
-}
+    return {xpaths: nodeXPaths, selectedTexts: nodeTexts};
+  }
     
     
 var old_highlighted_texts = [];
@@ -170,14 +181,17 @@ document.addEventListener('keydown', (event) => {
     const highlightedText = window.getSelection().toString();
     let selectionRange = window.getSelection().getRangeAt(0);
     highlightedNodeText = [...highlightedText.split('\n\n')].filter(text => text.length != 1).map(text => text.trim());
-    const xpaths = getXPathsForSelectedText();
+    const xpaths_text = getXPathsAndTextsForSelectedText();
+    const xpaths = xpaths_text.xpaths;
+    const chunkedNodeTexts = xpaths_text.selectedTexts;
     console.log("Xpaths below");
     console.log(xpaths);
     console.log('Highlighted node text below');
     console.log(highlightedNodeText);
     console.log('Highlighted text before processing below');
     console.log(highlightedText);
-    console.log("++++++++++++++++++")
+    console.log("++++----------------++++++++++++++")
+    console.log(chunkedNodeTexts)
     console.log("-+-+-+-+-+-+-+-+--+")
     old_highlighted_texts = JSON.parse(localStorage.getItem('text'));
     old_xpaths = JSON.parse(localStorage.getItem('xpaths'));
