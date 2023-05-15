@@ -27,7 +27,7 @@ function removeHighlightBox(highlightBox) {
 }
 
 // I think I need to feed in XPATHS! and the text to highlight would work too -- its all indexed?
-function highlightText(selectionRange, label, idx) {
+function highlightText(selectionRange, label, idx, xpaths) {
     const rect = selectionRange.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
@@ -52,6 +52,13 @@ function highlightText(selectionRange, label, idx) {
     const idxAttribute = document.createAttribute("idx");
     idxAttribute.value = idx;
     highlightBox.setAttributeNode(idxAttribute);
+
+    const xpathsAttribute = document.createAttribute("xpaths");
+    xpathsAttribute.value = xpaths;
+    highlightBox.setAttributeNode(xpathsAttribute);
+    //console.log("Xpaths associated with highlightbox");
+    //console.log(highlightBox.getAttribute('xpaths'));
+    //console.log("Xpaths associated with highlightbox");
     
     // Add event listener to retrieve and print label property on click
     highlightBox.addEventListener('click', () => {
@@ -223,7 +230,8 @@ document.addEventListener('keydown', (event) => {
         var highlightBox = highlightText(
             selectionRange,
             selectedOption,
-            old_xpaths.length
+            old_xpaths.length,
+            xpaths
         );
         document.body.appendChild(highlightBox);
         });
