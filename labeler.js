@@ -98,16 +98,19 @@ function highlightText(selectionRange, label, idx, xpaths) {
 }
 
 function getXPathsAndTextsForSelectedText() {
-    let sel = window.getSelection();
-    let range = sel.getRangeAt(0);
-    let container = range.commonAncestorContainer;
-    let nodeXPaths = [];
-    let nodeTexts = [];
+    const sel = window.getSelection();
+    const range = sel.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+    const nodeXPaths = [];
+    const nodeTexts = [];
+    let currSelectCopy = sel.toString().trim();
   
     function getXPath(node) {
-      let xpath = '';
+      let xpath = "";
       for (; node && node.nodeType == Node.ELEMENT_NODE; node = node.parentNode) {
-        let siblings = Array.from(node.parentNode.childNodes).filter(sibling => sibling.nodeName === node.nodeName);
+        let siblings = Array.from(node.parentNode.childNodes).filter(
+          (sibling) => sibling.nodeName === node.nodeName
+        );
         if (siblings.length > 1) {
           let index = siblings.indexOf(node) + 1;
           xpath = `/${node.nodeName.toLowerCase()}[${index}]${xpath}`;
@@ -124,10 +127,17 @@ function getXPathsAndTextsForSelectedText() {
           if (node.textContent.trim().length > 0) {
             let nodeXPath = getXPath(node.parentNode);
             let nodeText = node.textContent.trim();
-            let startIndex = Math.max(nodeText.indexOf(sel.toString()), 0);
-            let endIndex = Math.min(startIndex + sel.toString().length, nodeText.length);
-            nodeTexts.push(nodeText.substring(startIndex, endIndex));
-            nodeXPaths.push(nodeXPath);
+            let startIndex = Math.max(nodeText.indexOf(currSelectCopy), 0);
+            let endIndex = Math.min(
+              startIndex + currSelectCopy.length,
+              nodeText.length
+            );
+            if (startIndex !== -1) {
+              let selectedText = nodeText.substring(startIndex, endIndex);
+              currSelectCopy = currSelectCopy.replace(selectedText, "");
+              nodeTexts.push(selectedText);
+              nodeXPaths.push(nodeXPath);
+            }
           }
         } else {
           if (node.childNodes.length > 0) {
@@ -138,10 +148,17 @@ function getXPathsAndTextsForSelectedText() {
             if (node.textContent.trim().length > 0) {
               let nodeXPath = getXPath(node);
               let nodeText = node.textContent.trim();
-              let startIndex = Math.max(nodeText.indexOf(sel.toString()), 0);
-              let endIndex = Math.min(startIndex + sel.toString().length, nodeText.length);
-              nodeTexts.push(nodeText.substring(startIndex, endIndex));
-              nodeXPaths.push(nodeXPath);
+              let startIndex = Math.max(nodeText.indexOf(currSelectCopy), 0);
+              let endIndex = Math.min(
+                startIndex + currSelectCopy.length,
+                nodeText.length
+              );
+              if (startIndex !== -1) {
+                let selectedText = nodeText.substring(startIndex, endIndex);
+                currSelectCopy = currSelectCopy.replace(selectedText, "");
+                nodeTexts.push(selectedText);
+                nodeXPaths.push(nodeXPath);
+              }
             }
           }
         }
@@ -150,7 +167,7 @@ function getXPathsAndTextsForSelectedText() {
   
     traverse(container);
   
-    return {xpaths: nodeXPaths, selectedTexts: nodeTexts};
+    return { xpaths: nodeXPaths, selectedTexts: nodeTexts };
   }
     
     
