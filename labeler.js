@@ -4,18 +4,21 @@ function removeHighlightBox(highlightBox) {
     highlightBox.remove();
     // Remove text entry from local storage
     highlighted_texts = JSON.parse(localStorage.getItem('text'));
+    segmented_texts = JSON.parse(localStorage.getItem('segmented_text'));
     xpaths = JSON.parse(localStorage.getItem('xpaths'));
-    labels = JSON.parse(localStorage.getItem('labels'));
+    labels = JSON.parse(localStorage.getItem('label'));
     
     const delete_idx = highlightBox.getAttribute('idx');
 
     highlighted_texts[delete_idx] = 'DELETED';
+    segmented_texts[delete_idx] = 'DELETED';
     xpaths[delete_idx] = 'DELETED';
     labels[delete_idx] = 'DELETED';
     
     localStorage.setItem('text', JSON.stringify(highlighted_texts));
+    localStorage.setItem('segmented_text', JSON.stringify(segmented_texts));
     localStorage.setItem('xpaths', JSON.stringify(xpaths));
-    localStorage.setItem('labels', JSON.stringify(labels));
+    localStorage.setItem('label', JSON.stringify(labels));
 
 }
 
@@ -53,8 +56,8 @@ function highlightText(selectionRange, label, idx, xpaths) {
     
     // Add event listener to retrieve and print label property on click
     highlightBox.addEventListener('click', () => {
-        const label = highlightBox.getAttribute('label');
-        console.log(label);
+        const label = highlightBox.getAttribute('label'); // ###
+        console.log(label); // ###
 
         // Toggle the selected state of the highlight box only if it is not already selected
         const isSelected = highlightBox.getAttribute('selected') === 'true';
@@ -175,10 +178,12 @@ function getXPathsAndTextsForSelectedText() {
 var old_highlighted_texts = [];
 var old_xpaths = [];
 var labels = [];
+var segmentedTexts = [];
 
 localStorage.setItem('text', JSON.stringify(old_highlighted_texts));
 localStorage.setItem('xpaths', JSON.stringify(old_xpaths));
-localStorage.setItem('labels', JSON.stringify(labels));
+localStorage.setItem('label', JSON.stringify(labels));
+localStorage.setItem('segmented_text', JSON.stringify(segmentedTexts));
 
 let isMenuOpen = false;
 let mouseX;
@@ -199,13 +204,13 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     const highlightedText = window.getSelection().toString();
     let selectionRange = window.getSelection().getRangeAt(0);
-    highlightedNodeText = [...highlightedText.split('\n\n')].filter(text => text.length != 1).map(text => text.trim());
     const xpaths_text = getXPathsAndTextsForSelectedText();
     const xpaths = xpaths_text.xpaths;
-    const chunkedNodeTexts = xpaths_text.selectedTexts;
+    const segmentedText = xpaths_text.selectedTexts;
 
     old_highlighted_texts = JSON.parse(localStorage.getItem('text'));
     old_xpaths = JSON.parse(localStorage.getItem('xpaths'));
+    segmentedTexts = JSON.parse(localStorage.getItem('segmented_text'));
 
     // Add code here to open dialog box to select label type. Create list
     // for both highlighted text and xpaths for [text: TextList, label: int], 
@@ -216,7 +221,7 @@ document.addEventListener('keydown', (event) => {
       mouseX = event.pageX;
       mouseY = event.pageY;
       console.log('opening label selector!')
-      const menuWindow = window.open("", "Dialog Box", `width=400,height=500,top=${mouseY},left=${mouseX}`);
+      const menuWindow = window.open("", "Dialog Box", `width=400,height=700,top=${mouseY},left=${mouseX}`);
       const dialog = menuWindow.document.createElement("div");
       dialog.style.display = "flex";
       dialog.style.flexDirection = "column";
@@ -228,20 +233,25 @@ document.addEventListener('keydown', (event) => {
       message.style.fontSize = "20px";
       dialog.appendChild(message);
       
-      const sec_num0 = menuWindow.document.createElement("button");
-      const sec_title0 = menuWindow.document.createElement("button");
-      const sec_num1 = menuWindow.document.createElement("button");
-      const sec_title1 = menuWindow.document.createElement("button");
-      const sec_num2 = menuWindow.document.createElement("button");
-      const sec_title2 = menuWindow.document.createElement("button");
-      
+      const title = menuWindow.document.createElement("button");
       const pn = menuWindow.document.createElement("button");
-      const ot = menuWindow.document.createElement("button");
+      const sec_title0 = menuWindow.document.createElement("button");
+      const sec_num0 = menuWindow.document.createElement("button");
+      const sec_title1 = menuWindow.document.createElement("button");
+      const sec_num1 = menuWindow.document.createElement("button");
+      const sec_title2 = menuWindow.document.createElement("button");
+      const sec_num2 = menuWindow.document.createElement("button");
       
-      let label_list = [sec_title0, sec_num0, sec_title1, sec_num1, sec_title2, sec_num2, pn, ot];
+      let label_list = [title, pn, sec_title0, sec_num0, sec_title1, sec_num1, sec_title2, sec_num2];
       
-      const labelctx = ['SecTitle0', 'SecNum0', 'SecTitle1', 'SecNum1', 'SecTitle2', 'SecNum2', 'PageNum', 'Outside'];
-      const labelnm = ['sectitle0', 'secnum0', 'sectitle1', 'secnum1', 'sectitle2', 'secnum2', 'pn', 'ot'];
+      const labelctx = [
+        'Title', 
+        'Page Num', 
+        'Section Title', 'Section Num',
+        'Sub Section Title', 'Sub Section Num',
+        'Sub Sub Section Title', 'Sub Sub Section Num'
+      ];
+      const labelnm = ['title', 'pn', 'st', 'sn','sst', 'ssn','ssst', 'sssn'];
       
       for (let i = 0; i < label_list.length; i++){
         lb = label_list[i];
@@ -251,15 +261,15 @@ document.addEventListener('keydown', (event) => {
           selectedOption = labelctx[i];
           isMenuOpen = false;
           label = labelnm[i];
-          labels = JSON.parse(localStorage.getItem('labels'));
+          labels = JSON.parse(localStorage.getItem('label'));
           labels.push(label);
-          localStorage.setItem('labels', JSON.stringify(labels));
+          localStorage.setItem('label', JSON.stringify(labels));
 
           menuWindow.close();
 
         var highlightBox = highlightText(
             selectionRange,
-            selectedOption,
+            label,
             old_xpaths.length-1,
             xpaths
         );
@@ -270,21 +280,18 @@ document.addEventListener('keydown', (event) => {
       
     }
 
-    old_highlighted_texts.push(highlightedNodeText);
+    old_highlighted_texts.push(highlightedText); 
     old_xpaths.push(xpaths);
+    segmentedTexts.push(segmentedText);
     
     
     localStorage.setItem('text', JSON.stringify(old_highlighted_texts));
     localStorage.setItem('xpaths', JSON.stringify(old_xpaths));
+    localStorage.setItem('segmented_text', JSON.stringify(segmentedTexts));
     
   }
 });
 
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'b') {
-    console.log(localStorage)
-  }
-});
 document.addEventListener('keydown', (event) => {
   if (event.key === 'p') {
     downloadObjectAsJson(localStorage, 'contract_saved.json')
