@@ -215,7 +215,6 @@ document.addEventListener('keydown', (event) => {
     // Add code here to open dialog box to select label type. Create list
     // for both highlighted text and xpaths for [text: TextList, label: int], 
     // [xpath: xpathlist, label: int]. Mapping done by index.
-    let label = '';
     if (!isMenuOpen){
       isMenuOpen = true;
       mouseX = event.pageX;
@@ -229,54 +228,51 @@ document.addEventListener('keydown', (event) => {
       dialog.style.alignItems = "center";
       menuWindow.document.body.appendChild(dialog);
       const message = menuWindow.document.createElement("p");
-      message.textContent = "Please select an option:";
+      message.textContent = "Please type one of following classes: t, p, st, sn, s1t, s1n, s2t, s2n, s3t, s3n. Press ENTER when done.";
       message.style.fontSize = "20px";
       dialog.appendChild(message);
       
-      const title = menuWindow.document.createElement("button");
-      const pn = menuWindow.document.createElement("button");
-      const sec_title0 = menuWindow.document.createElement("button");
-      const sec_num0 = menuWindow.document.createElement("button");
-      const sec_title1 = menuWindow.document.createElement("button");
-      const sec_num1 = menuWindow.document.createElement("button");
-      const sec_title2 = menuWindow.document.createElement("button");
-      const sec_num2 = menuWindow.document.createElement("button");
-      
-      let label_list = [title, pn, sec_title0, sec_num0, sec_title1, sec_num1, sec_title2, sec_num2];
-      
-      const labelctx = [
-        'Title', 
-        'Page Num', 
-        'Section Title', 'Section Num',
-        'Sub Section Title', 'Sub Section Num',
-        'Sub Sub Section Title', 'Sub Sub Section Num'
-      ];
-      const labelnm = ['title', 'pn', 'st', 'sn','sst', 'ssn','ssst', 'sssn'];
-      
-      for (let i = 0; i < label_list.length; i++){
-        lb = label_list[i];
-        lb.textContent = labelctx[i];
-        lb.style.margin = "10px";
-        lb.addEventListener("click", () => {
-          selectedOption = labelctx[i];
-          isMenuOpen = false;
-          label = labelnm[i];
-          labels = JSON.parse(localStorage.getItem('label'));
+      let label = '';
+      let sequence = '';
+      const allowedKeys = new Set(['t','p','s','n','1','2','3'])
+      const labelTypes = new Set(['t', 'p', 'st', 'sn', 's1t', 's1n','s2t', 's2n','s3t', 's3n'])
+      function handleKeyDown(event) {
+        
+        if (allowedKeys.has(event.key)) {
+          sequence += event.key;
+        }
+        else if (event.key === 'Enter' && sequence.length > 0 && labelTypes.has(sequence)) {
+          label = sequence;
           labels.push(label);
           localStorage.setItem('label', JSON.stringify(labels));
-
+          isMenuOpen = false;
           menuWindow.close();
-
-        var highlightBox = highlightText(
+          var highlightBox = highlightText(
             selectionRange,
             label,
             old_xpaths.length-1,
             xpaths
-        );
-        document.body.appendChild(highlightBox);
-        });
-        dialog.appendChild(lb);
+          );
+          document.body.appendChild(highlightBox);
+        }
+        // Reset the sequence if user types something wrong
+        else {
+          sequence = '';
+        }
+        console.log(sequence)
+        const currSeq = menuWindow.document.createElement("p");
+        currSeq.textContent = `Curr sequence: ${sequence}`;
+        currSeq.style.fontSize = "20px";
+        dialog.appendChild(currSeq);
       }
+      menuWindow.addEventListener('keydown', handleKeyDown);
+      
+      menuWindow.addEventListener('unload', function() {
+        menuWindow.removeEventListener('keydown', handleKeyDown);
+        isMenuOpen = false;
+        
+      });
+
       
     }
 
