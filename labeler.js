@@ -34,7 +34,6 @@ function removeHighlightBox(highlightBox) {
     updateLocalStorage(xpaths, labels, segmentedTexts, texts);
 }
 
-// I think I need to feed in XPATHS! and the text to highlight would work too -- its all indexed?
 function highlightText(selectionRange, label, idx, xpaths) {
     const rect = selectionRange.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -42,7 +41,6 @@ function highlightText(selectionRange, label, idx, xpaths) {
     const top_ = rect.top + scrollTop;
     const left = rect.left + scrollLeft;
     
-    // Create a new highlight box element
     const highlightBox = document.createElement('div');
     highlightBox.style.position = 'absolute';
     highlightBox.style.top = top_ + 'px';
@@ -65,8 +63,6 @@ function highlightText(selectionRange, label, idx, xpaths) {
     xpathsAttribute.value = xpaths;
     highlightBox.setAttributeNode(xpathsAttribute);
 
-    
-    // Add event listener to retrieve and print label property on click
     highlightBox.addEventListener('click', () => {
         const label = highlightBox.getAttribute('label'); // ###
         console.log(label); // ###
@@ -100,12 +96,26 @@ function highlightText(selectionRange, label, idx, xpaths) {
         }
     }
     });
-    return highlightBox
+    return highlightBox;
 }
 
-function getXPathsAndTextsForSelectedText() {
-    const sel = window.getSelection();
-    const range = sel.getRangeAt(0);
+function getAllXPathsAndTexts() {
+  const sel = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(document.body);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  console.log(sel);
+  const xpaths_text = getXPathsAndTextsForSelectedText(sel, range);
+  console.log(xpaths_text);
+  const highlightedXpaths = xpaths_text.xpaths;
+  const highlightedSegmentedText = xpaths_text.selectedTexts;
+  
+  return [highlightedSegmentedText, highlightedXpaths];
+  
+}
+
+function getXPathsAndTextsForSelectedText(sel, range) {
     const container = range.commonAncestorContainer;
     const nodeXPaths = [];
     const nodeTexts = [];
@@ -202,7 +212,9 @@ document.addEventListener('keydown', (event) => {
     event.preventDefault();
     const highlightedText = window.getSelection().toString();
     let selectionRange = window.getSelection().getRangeAt(0);
-    const xpaths_text = getXPathsAndTextsForSelectedText();
+    const sel = window.getSelection();
+    const range = sel.getRangeAt(0);
+    const xpaths_text = getXPathsAndTextsForSelectedText(sel, range);
     const highlightedXpaths = xpaths_text.xpaths;
     const highlightedSegmentedText = xpaths_text.selectedTexts;
 
@@ -242,12 +254,7 @@ document.addEventListener('keydown', (event) => {
           segmentedTexts.push(highlightedSegmentedText);
           texts.push(highlightedText);
           updateLocalStorage(xpaths, labels, segmentedTexts, texts);
-          console.log('xxxxxxxxxxxxxxxxx')
-          console.log(labels.length);
-          console.log(xpaths.length);
-          console.log(segmentedTexts.length);
-          console.log(texts.length);
-          console.log('xxxxxxxxxxxxxxxxx')
+
           isMenuOpen = false;
           menuWindow.close();
           var highlightBox = highlightText(
@@ -256,10 +263,7 @@ document.addEventListener('keydown', (event) => {
             xpaths.length-1,
             xpaths
           );
-          console.log('_________________');
-          console.log(xpaths[xpaths.length-1]);
-          console.log(texts[xpaths.length-1]);
-          console.log('_________________');
+
           document.body.appendChild(highlightBox);
         }
         // Reset the sequence if user types something wrong
@@ -278,8 +282,6 @@ document.addEventListener('keydown', (event) => {
         menuWindow.removeEventListener('keydown', handleKeyDown);
         isMenuOpen = false;
       });
-
-      
     }    
   }
 });
@@ -287,5 +289,10 @@ document.addEventListener('keydown', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'p') {
     downloadObjectAsJson(localStorage, 'contract_saved.json')
+  }
+  if (event.key === 'a') {
+    let XPathsAndTexts = getAllXPathsAndTexts();
+    updateLocalStorage(XPathsAndTexts[1], '', XPathsAndTexts[0], '');
+    downloadObjectAsJson(localStorage, 'all_contract_text.json');
   }
 });
