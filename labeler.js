@@ -222,21 +222,21 @@ document.addEventListener('keydown', (event) => {
       const message = menuWindow.document.createElement("p");
       const xpath_text_message = menuWindow.document.createElement("p");
       xpath_text_message.textContent = "HIGHLIGHTED XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
-      message.textContent = "Please type one of following classes: t, p, st, sn, s1t, s1n, s2t, s2n, s3t, s3n. Press ENTER when done.";
+      message.textContent = "Please type one of following classes: t, n, st, sn, sst, ssn, ssst, sssn. Press SPACE when done. Press any other key to reset";
       message.style.fontSize = "12px";
       xpath_text_message.style.fontSize = "12px";
       dialog.appendChild(message);
       dialog.appendChild(xpath_text_message);
       
       let sequence = '';
-      const allowedKeys = new Set(['t','p','s','n','1','2','3'])
-      const labelTypes = new Set(['t', 'p', 'st', 'sn', 's1t', 's1n','s2t', 's2n','s3t', 's3n'])
+      const allowedKeys = new Set(['t','n','s'])
+      const labelTypes = new Set(['t', 'n', 'st', 'sn', 'sst', 'ssn','ssst', 'sssn'])
       function handleKeyDown(event) {
         
         if (allowedKeys.has(event.key)) {
           sequence += event.key;
         }
-        else if (event.key === 'Enter' && sequence.length > 0 && labelTypes.has(sequence)) {
+        else if (event.code === 'Space' && sequence.length > 0 && labelTypes.has(sequence)) {
           labels.push(sequence);
           xpaths.push(highlightedXpaths);
           segmentedTexts.push(highlightedSegmentedText);
