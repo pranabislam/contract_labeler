@@ -220,7 +220,7 @@ document.addEventListener('keydown', (event) => {
       mouseX = event.pageX;
       mouseY = event.pageY;
       console.log('opening label selector!')
-      const menuWindow = window.open("", "Dialog Box", `width=400,height=700,top=${mouseY},left=${mouseX}`);
+      const menuWindow = window.open("", "Dialog Box", `width=700,height=700,top=${mouseY},left=${mouseX}`);
       const dialog = menuWindow.document.createElement("div");
       dialog.style.display = "flex";
       dialog.style.flexDirection = "column";
@@ -228,9 +228,12 @@ document.addEventListener('keydown', (event) => {
       dialog.style.alignItems = "center";
       menuWindow.document.body.appendChild(dialog);
       const message = menuWindow.document.createElement("p");
+      const xpath_text_message = menuWindow.document.createElement("p");
+      xpath_text_message.textContent = "HIGHLIGHTED XPATHS: " + xpaths.map(xpath_ => xpath_ + '\n\n');
       message.textContent = "Please type one of following classes: t, p, st, sn, s1t, s1n, s2t, s2n, s3t, s3n. Press ENTER when done.";
       message.style.fontSize = "20px";
       dialog.appendChild(message);
+      dialog.appendChild(xpath_text_message);
       
       let label = '';
       let sequence = '';
@@ -270,7 +273,6 @@ document.addEventListener('keydown', (event) => {
       menuWindow.addEventListener('unload', function() {
         menuWindow.removeEventListener('keydown', handleKeyDown);
         isMenuOpen = false;
-        
       });
 
       
