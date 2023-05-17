@@ -1,25 +1,37 @@
+function updateLocalStorage(xpaths, labels, segmentedTexts, texts){
+  localStorage.setItem('texts', JSON.stringify(texts));
+  localStorage.setItem('xpaths', JSON.stringify(xpaths));
+  localStorage.setItem('labels', JSON.stringify(labels));
+  localStorage.setItem('segmentedTexts', JSON.stringify(segmentedTexts));
+}
+
+function retrieveLocalStorage(){
+  texts = JSON.parse(localStorage.getItem('texts'));
+  segmentedTexts = JSON.parse(localStorage.getItem('segmentedTexts'));
+  xpaths = JSON.parse(localStorage.getItem('xpaths'));
+  labels = JSON.parse(localStorage.getItem('labels'));
+
+  return [xpaths, labels, segmentedTexts, texts];
+}
+
 function removeHighlightBox(highlightBox) {
     
     // Remove highlightBox from the DOM
     highlightBox.remove();
     // Remove text entry from local storage
-    highlighted_texts = JSON.parse(localStorage.getItem('text'));
-    segmented_texts = JSON.parse(localStorage.getItem('segmented_text'));
-    xpaths = JSON.parse(localStorage.getItem('xpaths'));
-    labels = JSON.parse(localStorage.getItem('label'));
-    
+    [xpaths, labels, segmentedTexts, texts] = retrieveLocalStorage();
     const delete_idx = highlightBox.getAttribute('idx');
 
-    highlighted_texts[delete_idx] = 'DELETED';
-    segmented_texts[delete_idx] = 'DELETED';
+    texts[delete_idx] = 'DELETED';
+    segmentedTexts[delete_idx] = 'DELETED';
     xpaths[delete_idx] = 'DELETED';
     labels[delete_idx] = 'DELETED';
+    console.log('++++');
+    console.log(texts);
+    console.log(xpaths);
+    console.log('++++');
     
-    localStorage.setItem('text', JSON.stringify(highlighted_texts));
-    localStorage.setItem('segmented_text', JSON.stringify(segmented_texts));
-    localStorage.setItem('xpaths', JSON.stringify(xpaths));
-    localStorage.setItem('label', JSON.stringify(labels));
-
+    updateLocalStorage(xpaths, labels, segmentedTexts, texts);
 }
 
 // I think I need to feed in XPATHS! and the text to highlight would work too -- its all indexed?
@@ -73,17 +85,6 @@ function highlightText(selectionRange, label, idx, xpaths) {
             deleteButton.addEventListener('click', () => {
                 removeHighlightBox(highlightBox);
                 highlightBox.dialogBox.close();
-            });
-            highlightBox.dialogBox.addEventListener('keydown', (event) => {
-              if (event.key == '1'){
-                removeHighlightBox(highlightBox);
-                highlightBox.dialogBox.close();
-              }
-              if (event.key == '2'){
-                highlightBox.setAttribute('selected', 'false');
-                highlightBox.dialogBox.close();
-              }
-              
             });
             highlightBox.dialogBox.document.body.appendChild(deleteButton);
         }
@@ -174,16 +175,13 @@ function getXPathsAndTextsForSelectedText() {
   
     return { xpaths: nodeXPaths, selectedTexts: nodeTexts };
   }
-    
-var old_highlighted_texts = [];
-var old_xpaths = [];
+
+// Initialize and store
+var texts = [];
+var xpaths = [];
 var labels = [];
 var segmentedTexts = [];
-
-localStorage.setItem('text', JSON.stringify(old_highlighted_texts));
-localStorage.setItem('xpaths', JSON.stringify(old_xpaths));
-localStorage.setItem('label', JSON.stringify(labels));
-localStorage.setItem('segmented_text', JSON.stringify(segmentedTexts));
+updateLocalStorage(xpaths, labels, segmentedTexts, texts);
 
 let isMenuOpen = false;
 let mouseX;
@@ -205,21 +203,15 @@ document.addEventListener('keydown', (event) => {
     const highlightedText = window.getSelection().toString();
     let selectionRange = window.getSelection().getRangeAt(0);
     const xpaths_text = getXPathsAndTextsForSelectedText();
-    const xpaths = xpaths_text.xpaths;
-    const segmentedText = xpaths_text.selectedTexts;
+    const highlightedXpaths = xpaths_text.xpaths;
+    const highlightedSegmentedText = xpaths_text.selectedTexts;
 
-    old_highlighted_texts = JSON.parse(localStorage.getItem('text'));
-    old_xpaths = JSON.parse(localStorage.getItem('xpaths'));
-    segmentedTexts = JSON.parse(localStorage.getItem('segmented_text'));
+    [xpaths, labels, segmentedTexts, texts] = retrieveLocalStorage();
 
-    // Add code here to open dialog box to select label type. Create list
-    // for both highlighted text and xpaths for [text: TextList, label: int], 
-    // [xpath: xpathlist, label: int]. Mapping done by index.
     if (!isMenuOpen){
       isMenuOpen = true;
       mouseX = event.pageX;
       mouseY = event.pageY;
-      console.log('opening label selector!')
       const menuWindow = window.open("", "Dialog Box", `width=700,height=700,top=${mouseY},left=${mouseX}`);
       const dialog = menuWindow.document.createElement("div");
       dialog.style.display = "flex";
@@ -229,13 +221,13 @@ document.addEventListener('keydown', (event) => {
       menuWindow.document.body.appendChild(dialog);
       const message = menuWindow.document.createElement("p");
       const xpath_text_message = menuWindow.document.createElement("p");
-      xpath_text_message.textContent = "HIGHLIGHTED XPATHS: " + xpaths.map(xpath_ => xpath_ + '\n\n');
+      xpath_text_message.textContent = "HIGHLIGHTED XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
       message.textContent = "Please type one of following classes: t, p, st, sn, s1t, s1n, s2t, s2n, s3t, s3n. Press ENTER when done.";
-      message.style.fontSize = "20px";
+      message.style.fontSize = "12px";
+      xpath_text_message.style.fontSize = "12px";
       dialog.appendChild(message);
       dialog.appendChild(xpath_text_message);
       
-      let label = '';
       let sequence = '';
       const allowedKeys = new Set(['t','p','s','n','1','2','3'])
       const labelTypes = new Set(['t', 'p', 'st', 'sn', 's1t', 's1n','s2t', 's2n','s3t', 's3n'])
@@ -245,17 +237,29 @@ document.addEventListener('keydown', (event) => {
           sequence += event.key;
         }
         else if (event.key === 'Enter' && sequence.length > 0 && labelTypes.has(sequence)) {
-          label = sequence;
-          labels.push(label);
-          localStorage.setItem('label', JSON.stringify(labels));
+          labels.push(sequence);
+          xpaths.push(highlightedXpaths);
+          segmentedTexts.push(highlightedSegmentedText);
+          texts.push(highlightedText);
+          updateLocalStorage(xpaths, labels, segmentedTexts, texts);
+          console.log('xxxxxxxxxxxxxxxxx')
+          console.log(labels.length);
+          console.log(xpaths.length);
+          console.log(segmentedTexts.length);
+          console.log(texts.length);
+          console.log('xxxxxxxxxxxxxxxxx')
           isMenuOpen = false;
           menuWindow.close();
           var highlightBox = highlightText(
             selectionRange,
-            label,
-            old_xpaths.length-1,
+            sequence,
+            xpaths.length-1,
             xpaths
           );
+          console.log('_________________');
+          console.log(xpaths[xpaths.length-1]);
+          console.log(texts[xpaths.length-1]);
+          console.log('_________________');
           document.body.appendChild(highlightBox);
         }
         // Reset the sequence if user types something wrong
@@ -265,7 +269,7 @@ document.addEventListener('keydown', (event) => {
         console.log(sequence)
         const currSeq = menuWindow.document.createElement("p");
         currSeq.textContent = `Curr sequence: ${sequence}`;
-        currSeq.style.fontSize = "20px";
+        currSeq.style.fontSize = "12px";
         dialog.appendChild(currSeq);
       }
       menuWindow.addEventListener('keydown', handleKeyDown);
@@ -276,17 +280,7 @@ document.addEventListener('keydown', (event) => {
       });
 
       
-    }
-
-    old_highlighted_texts.push(highlightedText); 
-    old_xpaths.push(xpaths);
-    segmentedTexts.push(segmentedText);
-    
-    
-    localStorage.setItem('text', JSON.stringify(old_highlighted_texts));
-    localStorage.setItem('xpaths', JSON.stringify(old_xpaths));
-    localStorage.setItem('segmented_text', JSON.stringify(segmentedTexts));
-    
+    }    
   }
 });
 
