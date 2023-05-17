@@ -288,11 +288,11 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'p') {
-    downloadObjectAsJson(localStorage, 'contract_saved.json')
+    downloadObjectAsJson(localStorage, 'contract_saved')
   }
   if (event.key === 'a') {
     let XPathsAndTexts = getAllXPathsAndTexts();
     updateLocalStorage(XPathsAndTexts[1], '', XPathsAndTexts[0], '');
-    downloadObjectAsJson(localStorage, 'all_contract_text.json');
+    downloadObjectAsJson(localStorage, 'all_contract_text');
   }
 });
