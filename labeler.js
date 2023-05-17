@@ -198,7 +198,7 @@ function downloadObjectAsJson(exportObj, exportName) {
 }  
 
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'e') {
+  if (event.code === 'Space') {
     event.preventDefault();
     const highlightedText = window.getSelection().toString();
     let selectionRange = window.getSelection().getRangeAt(0);
