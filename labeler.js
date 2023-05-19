@@ -1,8 +1,9 @@
-function updateLocalStorage(xpaths, labels, segmentedTexts, texts){
+function updateLocalStorage(xpaths, labels, segmentedTexts, texts, c){
   localStorage.setItem('texts', JSON.stringify(texts));
   localStorage.setItem('xpaths', JSON.stringify(xpaths));
   localStorage.setItem('labels', JSON.stringify(labels));
   localStorage.setItem('segmentedTexts', JSON.stringify(segmentedTexts));
+  localStorage.setItem('c', JSON.stringify(c));
 }
 
 function retrieveLocalStorage(){
@@ -10,28 +11,26 @@ function retrieveLocalStorage(){
   segmentedTexts = JSON.parse(localStorage.getItem('segmentedTexts'));
   xpaths = JSON.parse(localStorage.getItem('xpaths'));
   labels = JSON.parse(localStorage.getItem('labels'));
+  c = JSON.parse(localStorage.getItem('c'));
 
-  return [xpaths, labels, segmentedTexts, texts];
+  return [xpaths, labels, segmentedTexts, texts, c];
 }
 
-function removeHighlightBox(highlightBox) {
+function removeHBox(hBox) {
     
-    // Remove highlightBox from the DOM
-    highlightBox.remove();
+    // Remove hBox from the DOM
+    hBox.remove();
     // Remove text entry from local storage
-    [xpaths, labels, segmentedTexts, texts] = retrieveLocalStorage();
-    const delete_idx = highlightBox.getAttribute('idx');
+    [xpaths, labels, segmentedTexts, texts, c] = retrieveLocalStorage();
+    const delete_idx = hBox.getAttribute('idx');
 
     texts[delete_idx] = 'DELETED';
     segmentedTexts[delete_idx] = 'DELETED';
     xpaths[delete_idx] = 'DELETED';
     labels[delete_idx] = 'DELETED';
-    console.log('++++');
-    console.log(texts);
-    console.log(xpaths);
-    console.log('++++');
+    c[delete_idx] = 'DELETED';
     
-    updateLocalStorage(xpaths, labels, segmentedTexts, texts);
+    updateLocalStorage(xpaths, labels, segmentedTexts, texts, c);
 }
 
 function highlightText(selectionRange, label, idx, xpaths) {
@@ -41,62 +40,62 @@ function highlightText(selectionRange, label, idx, xpaths) {
     const top_ = rect.top + scrollTop;
     const left = rect.left + scrollLeft;
     
-    const highlightBox = document.createElement('div');
-    highlightBox.style.position = 'absolute';
-    highlightBox.style.top = top_ + 'px';
-    highlightBox.style.left = left + 'px';
-    highlightBox.style.width = rect.width + 'px';
-    highlightBox.style.height = rect.height + 'px';
-    highlightBox.style.backgroundColor = 'yellow';
-    highlightBox.style.opacity = '0.5';
-    highlightBox.style.zIndex = '99999';
+    const hBox = document.createElement('div');
+    hBox.style.position = 'absolute';
+    hBox.style.top = top_ + 'px';
+    hBox.style.left = left + 'px';
+    hBox.style.width = rect.width + 'px';
+    hBox.style.height = rect.height + 'px';
+    hBox.style.backgroundColor = 'yellow';
+    hBox.style.opacity = '0.5';
+    hBox.style.zIndex = '99999';
     
     const labelAttribute = document.createAttribute("label");
     labelAttribute.value = label;
-    highlightBox.setAttributeNode(labelAttribute);
+    hBox.setAttributeNode(labelAttribute);
 
     const idxAttribute = document.createAttribute("idx");
     idxAttribute.value = idx;
-    highlightBox.setAttributeNode(idxAttribute);
+    hBox.setAttributeNode(idxAttribute);
 
     const xpathsAttribute = document.createAttribute("xpaths");
     xpathsAttribute.value = xpaths;
-    highlightBox.setAttributeNode(xpathsAttribute);
+    hBox.setAttributeNode(xpathsAttribute);
 
-    highlightBox.addEventListener('click', () => {
-        const label = highlightBox.getAttribute('label'); // ###
+    hBox.addEventListener('click', () => {
+        const label = hBox.getAttribute('label'); // ###
         console.log(label); // ###
 
         // Toggle the selected state of the highlight box only if it is not already selected
-        const isSelected = highlightBox.getAttribute('selected') === 'true';
+        const isSelected = hBox.getAttribute('selected') === 'true';
         if (!isSelected) {
-            highlightBox.setAttribute('selected', 'true');
-            highlightBox.style.border = '2px solid red'; // Add red border when selected
+            hBox.setAttribute('selected', 'true');
+            hBox.style.border = '2px solid red'; // Add red border when selected
 
             // Create a dialog box to delete the highlight box
-            highlightBox.dialogBox = window.open("", "Delete Highlight Box", "height=200,width=400");
+            hBox.dialogBox = window.open("", "Delete Highlight Box", "height=200,width=400");
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Delete';
             deleteButton.style.margin = '10px';
             deleteButton.addEventListener('click', () => {
-                removeHighlightBox(highlightBox);
-                highlightBox.dialogBox.close();
+                removeHBox(hBox);
+                hBox.dialogBox.close();
             });
-            highlightBox.dialogBox.document.body.appendChild(deleteButton);
+            hBox.dialogBox.document.body.appendChild(deleteButton);
         }
     });
 
     // Add event listener to remove red border when de-selected
     document.addEventListener('click', (event) => {
-        if (!highlightBox.contains(event.target)) {
-        highlightBox.setAttribute('selected', 'false');
-        highlightBox.style.border = 'none'; // Remove red border when de-selected
-        if (highlightBox.dialogBox && !highlightBox.dialogBox.close){ // if dialog box is still open but we select anotherhighlightbox
-            highlightBox.dialogBox.close();
+        if (!hBox.contains(event.target)) {
+        hBox.setAttribute('selected', 'false');
+        hBox.style.border = 'none'; // Remove red border when de-selected
+        if (hBox.dialogBox && !hBox.dialogBox.close){ // if dialog box is still open but we select anotherhBox
+            hBox.dialogBox.close();
         }
     }
     });
-    return highlightBox;
+    return hBox;
 }
 
 function getAllXPathsAndTexts() {
@@ -191,7 +190,8 @@ var texts = [];
 var xpaths = [];
 var labels = [];
 var segmentedTexts = [];
-updateLocalStorage(xpaths, labels, segmentedTexts, texts);
+var c = [];
+updateLocalStorage(xpaths, labels, segmentedTexts, texts, c);
 
 let isMenuOpen = false;
 let mouseX;
@@ -218,7 +218,7 @@ document.addEventListener('keydown', (event) => {
     const highlightedXpaths = xpaths_text.xpaths;
     const highlightedSegmentedText = xpaths_text.selectedTexts;
 
-    [xpaths, labels, segmentedTexts, texts] = retrieveLocalStorage();
+    [xpaths, labels, segmentedTexts, texts, c] = retrieveLocalStorage();
 
     if (!isMenuOpen){
       isMenuOpen = true;
@@ -249,22 +249,23 @@ document.addEventListener('keydown', (event) => {
           sequence += event.key;
         }
         else if (event.code === 'Space' && sequence.length > 0 && labelTypes.has(sequence)) {
+          var hBox = highlightText(
+            selectionRange,
+            sequence,
+            xpaths.length,
+            xpaths
+          );
+
           labels.push(sequence);
           xpaths.push(highlightedXpaths);
           segmentedTexts.push(highlightedSegmentedText);
           texts.push(highlightedText);
-          updateLocalStorage(xpaths, labels, segmentedTexts, texts);
+          c.push([hBox.style.top, hBox.style.left, hBox.style.width, hBox.style.height])
+          updateLocalStorage(xpaths, labels, segmentedTexts, texts, c);
 
           isMenuOpen = false;
           menuWindow.close();
-          var highlightBox = highlightText(
-            selectionRange,
-            sequence,
-            xpaths.length-1,
-            xpaths
-          );
-
-          document.body.appendChild(highlightBox);
+          document.body.appendChild(hBox);
         }
         // Reset the sequence if user types something wrong
         else {
@@ -292,11 +293,11 @@ document.addEventListener('keydown', (event) => {
   }
   if (event.altKey && event.key === "a") {
     let XPathsAndTexts = getAllXPathsAndTexts();
-    updateLocalStorage(XPathsAndTexts[1], '', XPathsAndTexts[0], '');
+    updateLocalStorage(XPathsAndTexts[1], '', XPathsAndTexts[0], '', '');
     downloadObjectAsJson(localStorage, 'all_contract_text');
   }
   if (event.altKey && event.key === "0") {
-    updateLocalStorage('', '', '', '');
+    updateLocalStorage('', '', '', '', '');
     console.log('Wiped local storage');
   }
 });
