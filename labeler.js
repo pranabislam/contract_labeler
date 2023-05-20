@@ -291,12 +291,12 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'p') {
     downloadObjectAsJson(localStorage, 'contract_saved')
   }
-  if (event.altKey && event.key === "a") {
+  if ((event.altKey || event.metaKey) && event.key === "a") {
     let XPathsAndTexts = getAllXPathsAndTexts();
     updateLocalStorage(XPathsAndTexts[1], '', XPathsAndTexts[0], '', '');
     downloadObjectAsJson(localStorage, 'all_contract_text');
   }
-  if (event.altKey && event.key === "0") {
+  if ((event.altKey || event.metaKey) && event.key === "0") {
     updateLocalStorage('', '', '', '', '');
     console.log('Wiped local storage');
   }
