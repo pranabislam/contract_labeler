@@ -1,4 +1,4 @@
-const fileUrl = 'https://raw.githubusercontent.com/pranabislam/file_host/main/contract_saved.json';
+const fileUrl = 'https://raw.githubusercontent.com/pranabislam/file_host/main/url_to_json_url.json';
 const colorMap = {
   t: 'red',
   n: 'blue',
@@ -29,14 +29,29 @@ function addHBox(t,l,w,h,label){
   document.body.appendChild(hBox);
 }
 
+let rawJsonUrl;
+
 fetch(fileUrl)
   .then(response => response.json())
   .then(data => {
-    // Work with the 'data' object here
-    const coordinates = JSON.parse(data.c);
-    const labels = JSON.parse(data.labels);
     
-    for (let i = 0; i < coordinates.length; i++) {
-      addHBox(...coordinates[i], labels[i]);
-    }
+    console.log(window.location.href);
+    console.log(typeof window.location.href);
+
+    const rawJsonUrl = data[window.location.href];
+    console.log(rawJsonUrl);
+    console.log('-----')
+
+    fetch(rawJsonUrl)
+      .then(response2 => response2.json())
+      .then(data2 => {
+        const coordinates = JSON.parse(data2.c);
+        const labels = JSON.parse(data2.labels);
+        
+        for (let i = 0; i < coordinates.length; i++) {
+          addHBox(...coordinates[i], labels[i]);
+        }
+    });
+
 });
+
