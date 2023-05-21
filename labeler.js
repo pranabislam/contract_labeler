@@ -1,4 +1,12 @@
-function updateLocalStorage(xpaths, labels, segmentedTexts, texts, c){
+function norm(coor, w) {
+  if (w == 'w'){
+    return parseFloat(coor) / document.documentElement.scrollWidth;
+  }
+  return parseFloat(coor) / document.documentElement.scrollHeight;
+}
+
+
+function updateStorage(xpaths, labels, segmentedTexts, texts, c){
   localStorage.setItem('texts', JSON.stringify(texts));
   localStorage.setItem('xpaths', JSON.stringify(xpaths));
   localStorage.setItem('labels', JSON.stringify(labels));
@@ -6,7 +14,7 @@ function updateLocalStorage(xpaths, labels, segmentedTexts, texts, c){
   localStorage.setItem('c', JSON.stringify(c));
 }
 
-function retrieveLocalStorage(){
+function getStorage(){
   texts = JSON.parse(localStorage.getItem('texts'));
   segmentedTexts = JSON.parse(localStorage.getItem('segmentedTexts'));
   xpaths = JSON.parse(localStorage.getItem('xpaths'));
@@ -21,16 +29,16 @@ function removeHBox(hBox) {
     // Remove hBox from the DOM
     hBox.remove();
     // Remove text entry from local storage
-    [xpaths, labels, segmentedTexts, texts, c] = retrieveLocalStorage();
+    [xpaths, labels, segmentedTexts, texts, c] = getStorage();
     const delete_idx = hBox.getAttribute('idx');
 
-    texts[delete_idx] = 'DELETED';
-    segmentedTexts[delete_idx] = 'DELETED';
-    xpaths[delete_idx] = 'DELETED';
-    labels[delete_idx] = 'DELETED';
-    c[delete_idx] = 'DELETED';
+    texts[delete_idx] = 'DEL';
+    segmentedTexts[delete_idx] = 'DEL';
+    xpaths[delete_idx] = 'DEL';
+    labels[delete_idx] = 'DEL';
+    c[delete_idx] = 'DEL';
     
-    updateLocalStorage(xpaths, labels, segmentedTexts, texts, c);
+    updateStorage(xpaths, labels, segmentedTexts, texts, c);
 }
 
 function highlightText(selectionRange, label, idx, xpaths) {
@@ -64,7 +72,6 @@ function highlightText(selectionRange, label, idx, xpaths) {
 
     hBox.addEventListener('click', () => {
         const label = hBox.getAttribute('label'); // ###
-        console.log(label); // ###
 
         // Toggle the selected state of the highlight box only if it is not already selected
         const isSelected = hBox.getAttribute('selected') === 'true';
@@ -104,9 +111,8 @@ function getAllXPathsAndTexts() {
   range.selectNodeContents(document.body);
   sel.removeAllRanges();
   sel.addRange(range);
-  console.log(sel);
-  const xpaths_text = getXPathsAndTextsForSelectedText(sel, range);
-  console.log(xpaths_text);
+
+  const xpaths_text = getElementInfo(sel, range);
   const highlightedXpaths = xpaths_text.xpaths;
   const highlightedSegmentedText = xpaths_text.selectedTexts;
   
@@ -114,7 +120,7 @@ function getAllXPathsAndTexts() {
   
 }
 
-function getXPathsAndTextsForSelectedText(sel, range) {
+function getElementInfo(sel, range) {
     const container = range.commonAncestorContainer;
     const nodeXPaths = [];
     const nodeTexts = [];
@@ -191,7 +197,7 @@ var xpaths = [];
 var labels = [];
 var segmentedTexts = [];
 var c = [];
-updateLocalStorage(xpaths, labels, segmentedTexts, texts, c);
+updateStorage(xpaths, labels, segmentedTexts, texts, c);
 
 let isMenuOpen = false;
 let mouseX;
@@ -214,11 +220,11 @@ document.addEventListener('keydown', (event) => {
     let selectionRange = window.getSelection().getRangeAt(0);
     const sel = window.getSelection();
     const range = sel.getRangeAt(0);
-    const xpaths_text = getXPathsAndTextsForSelectedText(sel, range);
+    const xpaths_text = getElementInfo(sel, range);
     const highlightedXpaths = xpaths_text.xpaths;
     const highlightedSegmentedText = xpaths_text.selectedTexts;
 
-    [xpaths, labels, segmentedTexts, texts, c] = retrieveLocalStorage();
+    [xpaths, labels, segmentedTexts, texts, c] = getStorage();
 
     if (!isMenuOpen){
       isMenuOpen = true;
@@ -233,8 +239,8 @@ document.addEventListener('keydown', (event) => {
       menuWindow.document.body.appendChild(dialog);
       const message = menuWindow.document.createElement("p");
       const xpath_text_message = menuWindow.document.createElement("p");
-      xpath_text_message.textContent = "HIGHLIGHTED XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
-      message.textContent = "Please type one of following classes: t, n, st, sn, sst, ssn, ssst, sssn. Press SPACE when done. Press any other key to reset";
+      xpath_text_message.textContent = "Selected XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
+      message.textContent = "Type one of following: t, n, st, sn, sst, ssn, ssst, sssn. Press SPACE when done. Press any other key to reset";
       message.style.fontSize = "12px";
       xpath_text_message.style.fontSize = "12px";
       dialog.appendChild(message);
@@ -260,8 +266,8 @@ document.addEventListener('keydown', (event) => {
           xpaths.push(highlightedXpaths);
           segmentedTexts.push(highlightedSegmentedText);
           texts.push(highlightedText);
-          c.push([hBox.style.top, hBox.style.left, hBox.style.width, hBox.style.height])
-          updateLocalStorage(xpaths, labels, segmentedTexts, texts, c);
+          c.push([norm(hBox.style.top, 'h'), norm(hBox.style.left, 'w'), norm(hBox.style.width, 'w'), norm(hBox.style.height, 'h')])
+          updateStorage(xpaths, labels, segmentedTexts, texts, c);
 
           isMenuOpen = false;
           menuWindow.close();
@@ -285,19 +291,17 @@ document.addEventListener('keydown', (event) => {
       });
     }    
   }
-});
-
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'p') {
+  else if (event.key === 'p') {
     downloadObjectAsJson(localStorage, 'contract_saved')
   }
-  if ((event.altKey || event.metaKey) && event.key === "a") {
+  else if ((event.altKey || event.metaKey) && event.key === "a") {
     let XPathsAndTexts = getAllXPathsAndTexts();
-    updateLocalStorage(XPathsAndTexts[1], '', XPathsAndTexts[0], '', '');
+    updateStorage(XPathsAndTexts[1], '', XPathsAndTexts[0], '', '');
     downloadObjectAsJson(localStorage, 'all_contract_text');
   }
-  if ((event.altKey || event.metaKey) && event.key === "0") {
-    updateLocalStorage('', '', '', '', '');
-    console.log('Wiped local storage');
+  else if ((event.altKey || event.metaKey) && event.key === "0") {
+    updateStorage('', '', '', '', '');
+    console.log('ERASED');
   }
 });
+
