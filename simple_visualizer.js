@@ -16,10 +16,10 @@ function addHBox(t,l,w,h,label){
   
   const hBox = document.createElement('div');
   hBox.style.position = 'absolute';
-  hBox.style.top = t + 'px';
-  hBox.style.left = l + 'px';
-  hBox.style.width = w + 'px';
-  hBox.style.height = h + 'px';
+  hBox.style.top = t * document.documentElement.scrollHeight + 'px';
+  hBox.style.left = l * document.documentElement.scrollWidth + 'px';
+  hBox.style.width = w * document.documentElement.scrollWidth + 'px';
+  hBox.style.height = h * document.documentElement.scrollHeight + 'px';
   hBox.style.backgroundColor = colorMap[label];
   hBox.style.opacity = '0.5';
   hBox.style.zIndex = '99999';
@@ -37,13 +37,6 @@ fetch(fileUrl)
     const labels = JSON.parse(data.labels);
     
     for (let i = 0; i < coordinates.length; i++) {
-      const subList = [];
-      for (let j = 0; j < coordinates[i].length; j++) {
-        const entry = coordinates[i][j];
-        const value = parseFloat(entry.replace("px", ""));
-        subList.push(isNaN(value) ? entry : value);
-      }
-      subList.push(labels[i]);
-      addHBox(...subList);
+      addHBox(...coordinates[i], labels[i]);
     }
 });
