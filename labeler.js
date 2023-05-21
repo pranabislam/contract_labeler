@@ -64,7 +64,6 @@ function highlightText(selectionRange, label, idx, xpaths) {
 
     hBox.addEventListener('click', () => {
         const label = hBox.getAttribute('label'); // ###
-        console.log(label); // ###
 
         // Toggle the selected state of the highlight box only if it is not already selected
         const isSelected = hBox.getAttribute('selected') === 'true';
@@ -104,9 +103,8 @@ function getAllXPathsAndTexts() {
   range.selectNodeContents(document.body);
   sel.removeAllRanges();
   sel.addRange(range);
-  console.log(sel);
+
   const xpaths_text = getXPathsAndTextsForSelectedText(sel, range);
-  console.log(xpaths_text);
   const highlightedXpaths = xpaths_text.xpaths;
   const highlightedSegmentedText = xpaths_text.selectedTexts;
   
