@@ -1,4 +1,5 @@
-const fileUrl = 'https://raw.githubusercontent.com/pranabislam/file_host/main/url_to_json_url.json';
+//const fileUrl = 'https://raw.githubusercontent.com/pranabislam/file_host/main/url_to_json_url.json';
+const urlToContractIdPath = 'https://raw.githubusercontent.com/mumose/contracts/main/url_to_contract_id.json';
 const colorMap = {
   t: 'red',
   n: 'blue',
@@ -63,16 +64,14 @@ function checkInvalidXPaths(xpaths, color) {
 }
 let rawJsonUrl;
 
-fetch(fileUrl)
+fetch(urlToContractIdPath)
   .then(response => response.json())
   .then(data => {
     
-    console.log(window.location.href);
-    console.log(typeof window.location.href);
-
-    const highlightJsonUrl = data[window.location.href][0];
-    const allJsonUrl = data[window.location.href][1];
-
+    console.log(window.location.href);    
+    var contractId = data[window.location.href];
+    var highlightJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/labeled/contract_${contractId}_highlighted.json`;
+    var allJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/labeled/contract_${contractId}_all_nodes.json`;
 
     console.log(highlightJsonUrl);
     console.log('-----------');
