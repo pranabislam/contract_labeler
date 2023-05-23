@@ -33,33 +33,34 @@ function addHBox(t,l,w,h,label){
 // Function to check invalid XPaths
 function getInvalidXPaths(xpaths) {
   const invalidXPaths = [];
+  const filteredXPathsThatAreInvalid = [];
   for (const xpath of xpaths) {
     try {
       const result = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
       // Check if the result has no matching elements
       if (result.snapshotLength === 0) {
-        invalidXPaths.push(xpath); // Add invalid XPath to the array
+        if (xpath.includes('/script') || xpath.includes('/noscript') || xpath.trim() === '') {
+          filteredXPathsThatAreInvalid.push(xpath)
+        }
+        else {
+          invalidXPaths.push(xpath);
+        }
       }
     } catch (error) {
-      invalidXPaths.push(xpath); // Add invalid XPath to the array
+        if (xpath.includes('/script') || xpath.includes('/noscript') || xpath.trim() === '') {
+          filteredXPathsThatAreInvalid.push(xpath)
+        }
+        else {
+          invalidXPaths.push(xpath);
+        }
     }
   }
-  return invalidXPaths; // Return array of invalid XPaths
-}
-// Function to check invalid XPaths and change font color
-function checkInvalidXPaths(xpaths, color) {
-  const invalidXPaths = [];
-  for (const xpath of xpaths) {
-    try {
-      document.evaluate(xpath, document, null, XPathResult.ANY_TYPE, null);
-      const elements = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-      for (let i = 0; i < elements.snapshotLength; i++) {
-        elements.snapshotItem(i).style.color = color;
-      }
-    } catch (error) {
-      invalidXPaths.push(xpath); // Add invalid XPath to the array
-    }
-  }
+  
+  console.log('Total xpaths before any filtering or invalid checks', xpaths.length);
+  console.log('Non problematic Invalid XPaths:', filteredXPathsThatAreInvalid);
+  console.log('Number of non problematic invalid xpaths:', filteredXPathsThatAreInvalid.length);
+
+
   return invalidXPaths; // Return array of invalid XPaths
 }
 let rawJsonUrl;
@@ -91,11 +92,11 @@ fetch(urlToContractIdPath)
     .then(data2 => {
       const xpaths = JSON.parse(data2.xpaths);
       const invalidXPaths = getInvalidXPaths(xpaths);
-      console.log('---------------------');
+      console.log(`All filtered XPaths valid: ${invalidXPaths.length === 0}`);
+      console.log('-----Length of problematic invalid xpaths --------');
       console.log(invalidXPaths.length);
-      console.log(`All XPaths valid: ${invalidXPaths.length === 0}`);
       console.log(invalidXPaths);
-      console.log('----------------------')
+      console.log('---- Problematic Invalid xpaths above----------')
       
       if (invalidXPaths.length === 0) {
         const dialogWindow = window.open('', 'myDialog', 'width=400,height=200');
