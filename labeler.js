@@ -4,14 +4,18 @@ function norm(coor, w) {
   }
   return parseFloat(coor) / document.documentElement.scrollHeight;
 }
-
+function setStorage(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+setStorage('sWidth', document.documentElement.scrollWidth);
+setStorage('sHeight', document.documentElement.scrollHeight);
 
 function updateStorage(xpaths, labels, segmentedTexts, texts, c){
-  localStorage.setItem('texts', JSON.stringify(texts));
-  localStorage.setItem('xpaths', JSON.stringify(xpaths));
-  localStorage.setItem('labels', JSON.stringify(labels));
-  localStorage.setItem('segmentedTexts', JSON.stringify(segmentedTexts));
-  localStorage.setItem('c', JSON.stringify(c));
+  setStorage('texts', texts);
+  setStorage('xpaths', xpaths);
+  setStorage('labels', labels);
+  setStorage('segmentedTexts', segmentedTexts);
+  setStorage('c', c);
 }
 
 function getStorage(){
@@ -239,8 +243,8 @@ document.addEventListener('keydown', (event) => {
       menuWindow.document.body.appendChild(dialog);
       const message = menuWindow.document.createElement("p");
       const xpath_text_message = menuWindow.document.createElement("p");
-      xpath_text_message.textContent = "Selected XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
-      message.textContent = "Type one of following: t, n, st, sn, sst, ... , ssssn. Press SPACE when done. Press any other key to reset";
+      xpath_text_message.textContent = "XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
+      message.textContent = "Classes: t, n, st, sn, sst, ... , ssssn. Press SPACE when done; any other key to reset";
       message.style.fontSize = "12px";
       xpath_text_message.style.fontSize = "12px";
       dialog.appendChild(message);
