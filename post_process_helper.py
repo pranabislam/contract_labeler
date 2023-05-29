@@ -59,11 +59,14 @@ def remove_periods(row):
     texts = row['highlighted_segmented_text']
     label = row['highlighted_labels']
     indices_to_remove = []
-    
     if 'st' not in label:
         return row
     for i, text in enumerate(texts):
-        if '.' == text or '. ' == text or ('. ' in text and len(text) == 3):
+        pattern = r'^(\. [^\n]+|\.|\.[ \t])'
+        # if '.' == text or '. ' == text or ('. ' in text and len(text) == 3):
+        matches = re.findall(pattern, text)
+        if len(matches) > 0:
+            print(matches)
             indices_to_remove.append(i)
     
     texts = [text for i, text in enumerate(texts) if i not in indices_to_remove]
