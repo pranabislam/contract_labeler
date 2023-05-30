@@ -19,7 +19,9 @@ def main():
     path_to_contracts = sys.argv[2]
 
     all_nodes_df, exploded_highlight_df = get_highlight_full_dataframes(f'{path_to_contracts}labeled/', contract_num)
-
+    
+    filtered_highlight_df = filter_highlight_nodes_non_trivial(exploded_highlight_df, contract_num, path_to_contracts)
+    
     obj_cols = [
         'highlighted_xpaths',
         'highlighted_segmented_text',
@@ -33,13 +35,48 @@ def main():
         all_nodes_copy[col] = np.nan
         if col in obj_cols:
             all_nodes_copy[col] = all_nodes_copy[col].astype(object)
-    highlight_copy = exploded_highlight_df.copy(deep=True)
+    #highlight_copy = exploded_highlight_df.copy(deep=True)
 
-    dropped_highlight_df = remove_highlighted_duplicates(highlight_copy)
-    merge(all_nodes_copy, dropped_highlight_df)
-    postprocessor_tests.test_merge(all_nodes_copy, dropped_highlight_df, all_nodes_copy)
+    merge(all_nodes_copy, filtered_highlight_df)
+    postprocessor_tests.test_merge(all_nodes_copy, filtered_highlight_df, all_nodes_copy)
     merged_tagged = tag_bies_for_highlights(all_nodes_copy)
     merged_tagged.to_csv(f'{path_to_contracts}tagged/contract_{contract_num}_tagged.csv')
+
+
+def remove_section_titles_that_start_with_period_and_space(df):
+    
+    df['period_space_section_title'] = (
+        df['highlighted_segmented_text'].str.match('\. [.]*|\.\t[.]*|\.\u00A0[.]*')
+    )
+    
+    df['is_section_title'] = df['highlighted_labels'].apply(
+        lambda x: 1 if 'st' in x else 0
+    )
+    
+    rows_to_remove = df[df['period_space_section_title'] == True].copy(deep=True)
+
+    if len(rows_to_remove[rows_to_remove['is_section_title'] == 0]) > 0:
+        print('Warning, there were some rows that had the period space start but were not section titles. Please investigate. We are only removing rows that are section titles though')    
+        print(rows_to_remove[rows_to_remove['is_section_title']])
+
+    df = df[df['period_space_section_title'] == False].copy(deep=True)
+
+    return df.reset_index(drop=True), rows_to_remove
+
+def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
+    '''
+    After running highlight node df through simple filtering of clearly incorrect rows,
+    we now filter on rows that are more nuanced and stem from labeler errors we observed
+    from inspecting contracts
+    '''
+    df, rows_dropped1 = remove_section_titles_that_start_with_period_and_space(df)
+    df, rows_dropped2 = remove_highlighted_duplicates(df)
+
+    ## output csv for rows dropped
+    removed_rows = pd.concat([rows_dropped1, rows_dropped2])
+    removed_rows.to_csv(f'{path_to_contracts}removed_rows/contract_{contract_num}_removed_rows.csv')
+
+    return df
 
 def get_highlight_full_dataframes(path_to_contracts, contract_num):
     
@@ -88,14 +125,6 @@ def remove_highlighted_duplicates(df):
             
         prev = highlight_df.iloc[i-1]
         
-        # pattern = r'(^Section ([0-9]\.[0-9])+)'
-        # matches = re.findall(pattern, cur.highlighted_segmented_text.strip())
-        # print(cur.highlighted_segmented_text, matches, re.findall(pattern, 'Section 3.1'))
-        # if prev.highlighted_xpaths == cur.highlighted_xpaths\
-        # and 'st' in cur.highlighted_labels\
-        # and len(matches) > 0:
-        #     drop_index.append(i)
-        # if cur.highlighted_segmented_text in prev.highlighted_segmented_text\
         if len(cur.highlighted_segmented_text) < 1:
             drop_index.append(i)
         
@@ -104,7 +133,9 @@ def remove_highlighted_duplicates(df):
         and 'st' in cur.highlighted_labels:
             drop_index.append(i)
 
-    print(drop_index)
+    #print(drop_index)
+
+    dropped_rows = highlight_df.iloc[drop_index].copy(deep=True)
     
     highlight_df.drop(drop_index, inplace=True)
     highlight_df.drop(columns='size', inplace=True)
@@ -116,7 +147,7 @@ def remove_highlighted_duplicates(df):
     new_highlight_index = highlight_df.index
     highlight_df['exploded_highlight_node_order'] = new_highlight_index
     
-    return highlight_df
+    return highlight_df, dropped_rows
 
 def merge(all_nodes_df, highlight_nodes_df):
     '''
