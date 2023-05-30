@@ -68,8 +68,12 @@ def test_merge(full, highlight, merged):
     
     # Check for no lost left rows
     assert len(full) == len(merged)
-    print('test_merge - ALL CHECKS PASSED')
     
+    # Check for no lost labels - no lost right rows
+    merged_highlighted = merged[merged.highlighted_xpaths.astype(str) != 'nan'].exploded_highlight_node_order.tolist()
+    assert merged_highlighted == highlight.exploded_highlight_node_order.tolist()
+    print('test_merge - ALL CHECKS PASSED')
+
 def test_tag_bies_for_highlights(df, h_df):
     # Check that count of bies does not exceed number of highlighted rows
     temp = df.reset_index().drop(columns=['index'])

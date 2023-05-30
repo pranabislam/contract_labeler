@@ -62,7 +62,7 @@ def remove_periods(row):
     if 'st' not in label:
         return row
     for i, text in enumerate(texts):
-        pattern = r'^(\. [^\n]+|\.|\.[ \t])'
+        pattern = r'^(\. [^\n]+|\.[ \t]*)'
         # if '.' == text or '. ' == text or ('. ' in text and len(text) == 3):
         matches = re.findall(pattern, text)
         if len(matches) > 0:
