@@ -52,7 +52,7 @@ def main():
         merged_tagged.drop(columns=['period_space_section_title'], inplace=True)
     if 'is_section_title' in merged_tagged.columns:
         merged_tagged.drop(columns=['is_section_title'], inplace=True)
-    
+    postprocessor_tests.test_tag_bies_for_highlights(merged_tagged, filtered_highlight_df)
     merged_tagged.to_csv(f'{path_to_contracts}tagged/contract_{contract_num}_tagged.csv')
 
 
