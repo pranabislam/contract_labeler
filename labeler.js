@@ -10,22 +10,22 @@ function setStorage(key, value) {
 setStorage('sWidth', document.documentElement.scrollWidth);
 setStorage('sHeight', document.documentElement.scrollHeight);
 
-function updateStorage(xpaths, labels, segmentedTexts, texts, c){
+function updateStorage(xpaths, labels, sTexts, texts, c){
   setStorage('texts', texts);
   setStorage('xpaths', xpaths);
   setStorage('labels', labels);
-  setStorage('segmentedTexts', segmentedTexts);
+  setStorage('segmentedTexts', sTexts);
   setStorage('c', c);
 }
 
 function getStorage(){
   texts = JSON.parse(localStorage.getItem('texts'));
-  segmentedTexts = JSON.parse(localStorage.getItem('segmentedTexts'));
+  sTexts = JSON.parse(localStorage.getItem('segmentedTexts'));
   xpaths = JSON.parse(localStorage.getItem('xpaths'));
   labels = JSON.parse(localStorage.getItem('labels'));
   c = JSON.parse(localStorage.getItem('c'));
 
-  return [xpaths, labels, segmentedTexts, texts, c];
+  return [xpaths, labels, sTexts, texts, c];
 }
 
 function removeHBox(hBox) {
@@ -33,16 +33,16 @@ function removeHBox(hBox) {
     // Remove hBox from the DOM
     hBox.remove();
     // Remove text entry from local storage
-    [xpaths, labels, segmentedTexts, texts, c] = getStorage();
+    [xpaths, labels, sTexts, texts, c] = getStorage();
     const delete_idx = hBox.getAttribute('idx');
 
     texts[delete_idx] = 'DEL';
-    segmentedTexts[delete_idx] = 'DEL';
+    sTexts[delete_idx] = 'DEL';
     xpaths[delete_idx] = 'DEL';
     labels[delete_idx] = 'DEL';
     c[delete_idx] = 'DEL';
     
-    updateStorage(xpaths, labels, segmentedTexts, texts, c);
+    updateStorage(xpaths, labels, sTexts, texts, c);
 }
 
 function highlightText(selectionRange, label, idx, xpaths) {
@@ -199,9 +199,9 @@ function getElementInfo(sel, range) {
 var texts = [];
 var xpaths = [];
 var labels = [];
-var segmentedTexts = [];
+var sTexts = [];
 var c = [];
-updateStorage(xpaths, labels, segmentedTexts, texts, c);
+updateStorage(xpaths, labels, sTexts, texts, c);
 
 let isMenuOpen = false;
 let mouseX;
@@ -228,7 +228,7 @@ document.addEventListener('keydown', (event) => {
     const highlightedXpaths = xpaths_text.xpaths;
     const highlightedSegmentedText = xpaths_text.selectedTexts;
 
-    [xpaths, labels, segmentedTexts, texts, c] = getStorage();
+    [xpaths, labels, sTexts, texts, c] = getStorage();
 
     if (!isMenuOpen){
       isMenuOpen = true;
@@ -268,10 +268,10 @@ document.addEventListener('keydown', (event) => {
 
           labels.push(sequence);
           xpaths.push(highlightedXpaths);
-          segmentedTexts.push(highlightedSegmentedText);
+          sTexts.push(highlightedSegmentedText);
           texts.push(highlightedText);
           c.push([norm(hBox.style.top, 'h'), norm(hBox.style.left, 'w'), norm(hBox.style.width, 'w'), norm(hBox.style.height, 'h')])
-          updateStorage(xpaths, labels, segmentedTexts, texts, c);
+          updateStorage(xpaths, labels, sTexts, texts, c);
 
           isMenuOpen = false;
           menuWindow.close();
@@ -281,7 +281,7 @@ document.addEventListener('keydown', (event) => {
         else {
           sequence = '';
         }
-        console.log(sequence)
+        console.log(sequence);
         const currSeq = menuWindow.document.createElement("p");
         currSeq.textContent = `Curr sequence: ${sequence}`;
         currSeq.style.fontSize = "12px";
@@ -308,4 +308,3 @@ document.addEventListener('keydown', (event) => {
     console.log('ERASED');
   }
 });
-
