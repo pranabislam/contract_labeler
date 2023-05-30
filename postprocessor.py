@@ -22,6 +22,13 @@ def main():
     
     filtered_highlight_df = filter_highlight_nodes_non_trivial(exploded_highlight_df, contract_num, path_to_contracts)
     
+    # Replace new lines with spaces
+    filtered_highlight_df['highlighted_segmented_text'] = (
+        filtered_highlight_df.highlighted_segmented_text.str.replace('\n', ' ')
+    )
+    all_nodes_df['text'] = all_nodes_df.text.str.replace('\n', ' ')
+    
+
     obj_cols = [
         'highlighted_xpaths',
         'highlighted_segmented_text',
@@ -29,24 +36,32 @@ def main():
         'segment_number_from_idx',
         'highlighted_coordinates'
     ]
+
     all_nodes_copy = all_nodes_df.copy(deep=True)
 
     for col in exploded_highlight_df.columns:
         all_nodes_copy[col] = np.nan
         if col in obj_cols:
             all_nodes_copy[col] = all_nodes_copy[col].astype(object)
-    #highlight_copy = exploded_highlight_df.copy(deep=True)
 
     merge(all_nodes_copy, filtered_highlight_df)
     postprocessor_tests.test_merge(all_nodes_copy, filtered_highlight_df, all_nodes_copy)
     merged_tagged = tag_bies_for_highlights(all_nodes_copy)
+    
+    if 'period_space_section_title' in merged_tagged.columns:
+        merged_tagged.drop(columns=['period_space_section_title'], inplace=True)
+    if 'is_section_title' in merged_tagged.columns:
+        merged_tagged.drop(columns=['is_section_title'], inplace=True)
+    
     merged_tagged.to_csv(f'{path_to_contracts}tagged/contract_{contract_num}_tagged.csv')
 
 
 def remove_section_titles_that_start_with_period_and_space(df):
-    
+    '''
+    Let's also remove lines that are only a period too.
+    '''
     df['period_space_section_title'] = (
-        df['highlighted_segmented_text'].str.match('\. [.]*|\.\t[.]*|\.\u00A0[.]*')
+        df['highlighted_segmented_text'].str.match('\. [.]*|\.\t[.]*|\.\u00A0[.]*|\.$')
     )
     
     df['is_section_title'] = df['highlighted_labels'].apply(
@@ -60,6 +75,7 @@ def remove_section_titles_that_start_with_period_and_space(df):
         print(rows_to_remove[rows_to_remove['is_section_title']])
 
     df = df[df['period_space_section_title'] == False].copy(deep=True)
+    df = df.drop(columns=['period_space_section_title', 'is_section_title'])
 
     return df.reset_index(drop=True), rows_to_remove
 
