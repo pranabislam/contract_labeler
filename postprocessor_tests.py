@@ -97,12 +97,12 @@ def test_tag_bies_for_highlights(df, h_df):
         
     for e_tag in e_tags:
         # FAILING HERE -> e following s tag
-        assert 'i_' in df.iloc[b_tag - 1].tagged_sequence \
-        or 'b_' in df.iloc[b_tag - 1].tagged_sequence
+        assert 'i_' in df.iloc[e_tag - 1].tagged_sequence \
+        or 'b_' in df.iloc[e_tag - 1].tagged_sequence
         
-        assert 's_' in df.iloc[b_tag + 1].tagged_sequence \
-        or 'o' in df.iloc[b_tag + 1].tagged_sequence \
-        or 'b_' in df.iloc[b_tag + 1].tagged_sequence
+        assert 's_' in df.iloc[e_tag + 1].tagged_sequence \
+        or 'o' in df.iloc[e_tag + 1].tagged_sequence \
+        or 'b_' in df.iloc[e_tag + 1].tagged_sequence
         
     for i_tag in i_tags:
         assert 'b_' in df.iloc[i_tag - 1].tagged_sequence or 'i_' in df.iloc[i_tag - 1].tagged_sequence

@@ -78,7 +78,10 @@ def main(contract_num, path_to_contracts):
     if not os.path.exists(os.path.dirname(tagged_csv_savepath)):
         os.makedirs(os.path.dirname(tagged_csv_savepath))
 
-    merged_tagged.to_csv(tagged_csv_savepath, index=False)
+    # merged_tagged.to_csv(tagged_csv_savepath, index=True)
+    postprocessor_tests.test_tag_bies_for_highlights(merged_tagged,
+                                                     filtered_highlight_df)
+    merged_tagged.to_csv(tagged_csv_savepath, index=True)
 
 
 def remove_section_titles_that_start_with_period_and_space(df):
@@ -123,7 +126,7 @@ def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
     if not os.path.exists(os.path.dirname(removed_rows_savepath)):
         os.makedirs(os.path.dirname(removed_rows_savepath))
 
-    removed_rows.to_csv(removed_rows_savepath, index=False)
+    removed_rows.to_csv(removed_rows_savepath, index=True)
 
     return df
 
@@ -167,16 +170,16 @@ def get_highlight_full_dataframes(path_to_contracts, contract_num):
     all_nodes_df.to_csv(os.path.join(path_to_contracts,
                                      'csvs',
                                      f'contract_{contract_num}_all_nodes.csv'),
-                        index=False)
+                        index=True)
     exploded_highlight_df.to_csv(os.path.join(path_to_contracts,
                                               'csvs',
                                               f'contract_{contract_num}_highlighted.csv'),
-                                 index=False)
+                                 index=True)
     if os.path.exists(highlight_nodes_edits_path):
         highlight_edits.to_csv(os.path.join(path_to_contracts,
                                             'csvs',
                                             f'contract_{contract_num}_edited.csv'),
-                               index=False)
+                               index=True)
 
     return all_nodes_df, exploded_highlight_df
 
