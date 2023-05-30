@@ -217,7 +217,7 @@ def create_highlight_nodes_df(highlighted_data):
     highlighted_df['highlighted_coordinates'] = ast.literal_eval(highlighted_data['c'])
     highlighted_df['segment_number_from_idx'] = highlighted_df.index.copy()
     
-    highlighted_df = highlighted_df.apply(lambda row: remove_periods(row), axis=1)
+    #highlighted_df = highlighted_df.apply(lambda row: remove_periods(row), axis=1) ## changing this and moving to new filter function
     highlighted_df['num_entries_1'] = highlighted_df['highlighted_xpaths'].apply(len)
     highlighted_df['num_entries_2'] = highlighted_df['highlighted_segmented_text'].apply(len)
     
