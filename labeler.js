@@ -244,7 +244,7 @@ document.addEventListener('keydown', (event) => {
       const message = menuWindow.document.createElement("p");
       const xpath_text_message = menuWindow.document.createElement("p");
       xpath_text_message.textContent = "XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
-      message.textContent = "Classes: t, n, st, sn, sst, ... , ssssn. Press SPACE when done; any other key to reset";
+      message.textContent = "Classes: t, tn, n, st, sn, sst, ... , ssssn. Press SPACE when done; any other key to reset";
       message.style.fontSize = "12px";
       xpath_text_message.style.fontSize = "12px";
       dialog.appendChild(message);
@@ -252,7 +252,7 @@ document.addEventListener('keydown', (event) => {
       
       let sequence = '';
       const allowedKeys = new Set(['t','n','s'])
-      const labelTypes = new Set(['t', 'n', 'st', 'sn', 'sst', 'ssn','ssst', 'sssn', 'ssssn', 'sssst'])
+      const labelTypes = new Set(['t','tn','n','st','sn','sst','ssn','ssst','sssn','ssssn','sssst'])
       function handleKeyDown(event) {
         
         if (allowedKeys.has(event.key)) {
