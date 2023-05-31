@@ -23,12 +23,12 @@ Usage:
  `$ python3 postprocessor.py --contract_dir ../labeling/contracts/ --contract_num 1`
 
 - if running on a single contract and loading contract after a manual edit
- `$ python3 postprocessor.py --contract_dir contract_dir --contract_num contract_num --mode edit`
- `$ python3 postprocessor.py --contract_dir ../labeling/contracts/ --contract_num 1 --mode edit`
+ `$ python3 postprocessor.py --contract_dir contract_dir --contract_num contract_num --is_edit_mode`
+ `$ python3 postprocessor.py --contract_dir ../labeling/contracts/ --contract_num 1 --is_edit_mode
 '''
 
 
-def main(contract_num, path_to_contracts, mode):
+def main(contract_num, path_to_contracts, is_edit_mode):
 
     # contract_num = 29
     # path_to_contracts = "/Users/rohith/Documents/Independent Study - DSGA1006/contracts/"
@@ -71,12 +71,13 @@ def main(contract_num, path_to_contracts, mode):
         if col in obj_cols:
             all_nodes_copy[col] = all_nodes_copy[col].astype(object)
 
-    
     highlight_edit_path = f'{contract_dir}drafts/contract_{contract_num}_highlight.csv'
     merged_edit_path = f'{contract_dir}drafts/contract_{contract_num}_merged.csv'
-    if mode=='edit':
+
+    if is_edit_mode:
         assert os.path.exists(highlight_edit_path), 'no editing file found in staging area'
         filtered_highlight_df = pd.read_csv(highlight_edit_path)
+
     merge(all_nodes_copy, filtered_highlight_df)
 
     ## Store for inspection before running tests and after merging (which is the main source of error)
@@ -132,7 +133,7 @@ def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
     we now filter on rows that are more nuanced and stem from labeler errors we observed
     from inspecting contracts
     '''
-   
+
     df, rows_dropped1 = remove_section_titles_that_start_with_period_and_space(df)
     df, rows_dropped2 = remove_highlighted_duplicates(df)
 
@@ -332,18 +333,18 @@ if __name__ == '__main__':
                         help='''contract id of a single contract
                                 use this for debugging or testing''',
                         default=None)
-    
-    parser.add_argument('--mode', type=str,
-                    help='''Enter --mode edit if you would like to signify you 
+
+    parser.add_argument('--is_edit_mode',
+                        help='''Enter --is_edit_mode if you would like to signify you
                             want to load a contract after manually editing
                             and saving to staging area
                          ''',
-                    default='default')
+                        action="store_true")
 
     args = parser.parse_args()
 
     contract_dir = args.contract_dir
-    mode = args.mode
+    is_edit_mode = args.is_edit_mode
 
     print("Processing...")
     # if the user passes a single contract num then skip
@@ -380,4 +381,4 @@ if __name__ == '__main__':
     else:
         contract_num = args.contract_num
 
-        main(contract_num, contract_dir, mode)
+        main(contract_num, contract_dir, is_edit_mode)
