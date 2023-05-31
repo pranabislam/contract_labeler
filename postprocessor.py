@@ -21,10 +21,14 @@ Usage:
 - if running on a single contract
  `$ python3 postprocessor.py --contract_dir contract_dir --contract_num contract_num`
  `$ python3 postprocessor.py --contract_dir ../labeling/contracts/ --contract_num 1`
+
+- if running on a single contract and loading contract after a manual edit
+ `$ python3 postprocessor.py --contract_dir contract_dir --contract_num contract_num --mode edit`
+ `$ python3 postprocessor.py --contract_dir ../labeling/contracts/ --contract_num 1 --mode edit`
 '''
 
 
-def main(contract_num, path_to_contracts):
+def main(contract_num, path_to_contracts, mode):
 
     # contract_num = 29
     # path_to_contracts = "/Users/rohith/Documents/Independent Study - DSGA1006/contracts/"
@@ -32,14 +36,18 @@ def main(contract_num, path_to_contracts):
     # path_to_contracts = sys.argv[2]
 
     all_nodes_df, exploded_highlight_df = \
-        get_highlight_full_dataframes(os.path.join(path_to_contracts,
-                                                   "labeled"),
-                                      contract_num)
+        get_highlight_full_dataframes(
+            os.path.join(path_to_contracts,
+            "labeled"),
+            contract_num
+        )
 
     filtered_highlight_df = \
-        filter_highlight_nodes_non_trivial(exploded_highlight_df,
-                                           contract_num,
-                                           path_to_contracts)
+        filter_highlight_nodes_non_trivial(
+            exploded_highlight_df,
+            contract_num,
+            path_to_contracts,
+        )
 
     # Replace new lines with spaces
     filtered_highlight_df['highlighted_segmented_text'] = (
@@ -63,7 +71,18 @@ def main(contract_num, path_to_contracts):
         if col in obj_cols:
             all_nodes_copy[col] = all_nodes_copy[col].astype(object)
 
+    
+    highlight_edit_path = f'{contract_dir}drafts/contract_{contract_num}_highlight.csv'
+    merged_edit_path = f'{contract_dir}drafts/contract_{contract_num}_merged.csv'
+    if mode=='edit':
+        assert os.path.exists(highlight_edit_path), 'no editing file found in staging area'
+        filtered_highlight_df = pd.read_csv(highlight_edit_path)
     merge(all_nodes_copy, filtered_highlight_df)
+
+    ## Store for inspection before running tests and after merging (which is the main source of error)
+    all_nodes_copy.to_csv(merged_edit_path)
+    filtered_highlight_df.to_csv(highlight_edit_path)
+
     postprocessor_tests.test_merge(all_nodes_copy, filtered_highlight_df, all_nodes_copy)
     merged_tagged = tag_bies_for_highlights(all_nodes_copy)
 
@@ -107,13 +126,13 @@ def remove_section_titles_that_start_with_period_and_space(df):
 
     return df.reset_index(drop=True), rows_to_remove
 
-
 def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
     '''
     After running highlight node df through simple filtering of clearly incorrect rows,
     we now filter on rows that are more nuanced and stem from labeler errors we observed
     from inspecting contracts
     '''
+   
     df, rows_dropped1 = remove_section_titles_that_start_with_period_and_space(df)
     df, rows_dropped2 = remove_highlighted_duplicates(df)
 
@@ -313,10 +332,18 @@ if __name__ == '__main__':
                         help='''contract id of a single contract
                                 use this for debugging or testing''',
                         default=None)
+    
+    parser.add_argument('--mode', type=str,
+                    help='''Enter --mode edit if you would like to signify you 
+                            want to load a contract after manually editing
+                            and saving to staging area
+                         ''',
+                    default='default')
 
     args = parser.parse_args()
 
     contract_dir = args.contract_dir
+    mode = args.mode
 
     print("Processing...")
     # if the user passes a single contract num then skip
@@ -353,4 +380,4 @@ if __name__ == '__main__':
     else:
         contract_num = args.contract_num
 
-        main(contract_num, contract_dir)
+        main(contract_num, contract_dir, mode)
