@@ -75,14 +75,23 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     merged_edit_path = f'{contract_dir}drafts/contract_{contract_num}_merged.csv'
 
     if is_edit_mode:
+        
+        print('In edit mode, reading and filtering again')
         assert os.path.exists(highlight_edit_path), 'no editing file found in staging area'
-        filtered_highlight_df = pd.read_csv(highlight_edit_path)
+        
+        # Read the manually edited file, re filter and proceed
+        filtered_highlight_df_copy = pd.read_csv(highlight_edit_path)
+        filtered_highlight_df = filter_highlight_nodes_non_trivial(
+            filtered_highlight_df_copy,
+            contract_num,
+            path_to_contracts,
+        )
 
     merge(all_nodes_copy, filtered_highlight_df)
 
     ## Store for inspection before running tests and after merging (which is the main source of error)
-    all_nodes_copy.to_csv(merged_edit_path)
-    filtered_highlight_df.to_csv(highlight_edit_path)
+    all_nodes_copy.to_csv(merged_edit_path, index=False)
+    filtered_highlight_df.to_csv(highlight_edit_path, index=False)
 
     postprocessor_tests.test_merge(all_nodes_copy, filtered_highlight_df, all_nodes_copy)
     merged_tagged = tag_bies_for_highlights(all_nodes_copy)
@@ -143,9 +152,15 @@ def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
     removed_rows_savepath = os.path.join(path_to_contracts,
                                      "removed_rows",
                                      f"contract_{contract_num}_removed_rows.csv")
+    # dir doesnt exist, so create it
     if not os.path.exists(os.path.dirname(removed_rows_savepath)):
         os.makedirs(os.path.dirname(removed_rows_savepath))
-
+    
+    # if file is already there, lets save the new removed rows file to disk
+    if os.path.exists(removed_rows_savepath):
+        count = len(os.listdir(os.path.dirname(removed_rows_savepath)))
+        removed_rows_savepath = f"{removed_rows_savepath[:-4]}_v{count}.csv"
+    
     removed_rows.to_csv(removed_rows_savepath, index=True)
 
     return df
@@ -221,19 +236,27 @@ def remove_highlighted_duplicates(df):
 
         if len(cur.highlighted_segmented_text) < 1:
             drop_index.append(i)
-
+        # if cur.exploded_highlight_node_order in [302, '302']:
+            # print('++++++++++++++++++++++++++++++++++++')
+            # print(prev.highlighted_segmented_text, cur.highlighted_segmented_text)
+            # print(prev.highlighted_xpaths, cur.highlighted_xpaths)
+            # print(prev.highlighted_labels, cur.highlighted_labels)
+            # print('+++++++++++++++++++++++++++++++++++')
         if prev.highlighted_segmented_text.startswith(cur.highlighted_segmented_text)\
         and prev.highlighted_xpaths == cur.highlighted_xpaths\
         and 'st' in cur.highlighted_labels:
             drop_index.append(i)
 
     #print(drop_index)
-
+    print(f"Dropping rows with index {drop_index}")
     dropped_rows = highlight_df.iloc[drop_index].copy(deep=True)
 
     highlight_df.drop(drop_index, inplace=True)
-    highlight_df.drop(columns='size', inplace=True)
-
+    
+    ## drop size if size is in the columns (double check this)
+    if 'size' in highlight_df.columns:
+        highlight_df.drop(columns='size', inplace=True)
+    
     final_group_sizes = highlight_df.groupby('segment_number_from_idx', as_index=False).size()
     highlight_df = pd.merge(highlight_df, final_group_sizes, on='segment_number_from_idx', how='left')
 
