@@ -206,14 +206,19 @@ def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
 
 def get_highlight_full_dataframes(path_to_contracts, contract_num):
 
-    all_nodes_path = os.path.join(path_to_contracts,
-                                  f"contract_{contract_num}_all_nodes.json")
-    highlighted_nodes_path = os.path.join(path_to_contracts,
-                                          f"contract_{contract_num}_highlighted.json")
-    highlight_nodes_edits_path = os.path.join(path_to_contracts,
-                                              "edits",
-                                              f"contract_{contract_num}_highlighted.json"
-                                              )
+    all_nodes_path = os.path.join(
+        path_to_contracts,
+        f"contract_{contract_num}_all_nodes.json"
+    )
+    highlighted_nodes_path = os.path.join(
+        path_to_contracts,
+        f"contract_{contract_num}_highlighted.json"
+    )
+    highlight_nodes_edits_path = os.path.join(
+        path_to_contracts,
+        "edits",
+        f"contract_{contract_num}_highlighted.json"
+    )
     if not os.path.exists(os.path.dirname(highlight_nodes_edits_path)):
         os.makedirs(os.path.dirname(highlight_nodes_edits_path))
 
@@ -223,19 +228,22 @@ def get_highlight_full_dataframes(path_to_contracts, contract_num):
     with open(highlighted_nodes_path, encoding='UTF-8') as f:
         highlighted_data = json.load(f)
 
+    all_nodes_df = post_process_helper.create_all_nodes_df(all_nodes_data)
+    postprocessor_tests.test_filter_all_nodes_df(all_nodes_df)
+    
+    ## If we are incorporating edits
     highlighted_data_edits = None
-
     if os.path.exists(highlight_nodes_edits_path):
         with open(highlight_nodes_edits_path, encoding='UTF-8') as f:
             highlighted_data_edits = json.load(f)
-
-    all_nodes_df = post_process_helper.create_all_nodes_df(all_nodes_data)
-    postprocessor_tests.test_filter_all_nodes_df(all_nodes_df)
-    exploded_highlight_df = post_process_helper.create_highlight_nodes_df(highlighted_data)
+        exploded_highlight_df = post_process_helper.create_highlight_nodes_df(highlighted_data, True, highlighted_data_edits)
+    else:
+        exploded_highlight_df = post_process_helper.create_highlight_nodes_df(highlighted_data, False, highlighted_data_edits)
+    
     postprocessor_tests.test_filter_highlight_nodes_df(exploded_highlight_df)
 
-    if os.path.exists(highlight_nodes_edits_path):
-        highlight_edits = post_process_helper.create_highlight_nodes_df(highlighted_data_edits)
+    # if os.path.exists(highlight_nodes_edits_path):
+    #     highlight_edits = post_process_helper.create_highlight_nodes_df(highlighted_data_edits)
 
     if not os.path.exists(os.path.join(path_to_contracts, 'csvs')):
         os.makedirs(os.path.join(path_to_contracts, 'csvs'))
@@ -248,11 +256,11 @@ def get_highlight_full_dataframes(path_to_contracts, contract_num):
                                               'csvs',
                                               f'contract_{contract_num}_highlighted.csv'),
                                  index=True)
-    if os.path.exists(highlight_nodes_edits_path):
-        highlight_edits.to_csv(os.path.join(path_to_contracts,
-                                            'csvs',
-                                            f'contract_{contract_num}_edited.csv'),
-                               index=True)
+    # if os.path.exists(highlight_nodes_edits_path):
+    #     highlight_edits.to_csv(os.path.join(path_to_contracts,
+    #                                         'csvs',
+    #                                         f'contract_{contract_num}_edited.csv'),
+    #                            index=True)
 
     return all_nodes_df, exploded_highlight_df
 

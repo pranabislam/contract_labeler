@@ -205,16 +205,24 @@ def create_all_nodes_df(all_nodes_data):
     df['all_nodes_ordering'] = df.index.copy()
     
     return df
-
-def create_highlight_nodes_df(highlighted_data):
-    
-    # Step 1: read in the data and do basic checks:
-    #highlight_text = ast.literal_eval(highlighted_data['texts'])
+def read_highlight_nodes_df(highlighted_data):
     highlighted_df = pd.DataFrame()
     highlighted_df['highlighted_xpaths'] = ast.literal_eval(highlighted_data['xpaths'])
     highlighted_df['highlighted_segmented_text'] = ast.literal_eval(highlighted_data['segmentedTexts'])
     highlighted_df['highlighted_labels'] = ast.literal_eval(highlighted_data['labels'])
     highlighted_df['highlighted_coordinates'] = ast.literal_eval(highlighted_data['c'])
+    return highlighted_df
+
+def create_highlight_nodes_df(highlighted_data, add_edits, edit_highlight_data):
+    
+    # Step 1: read in the data and do basic checks:
+    #highlight_text = ast.literal_eval(highlighted_data['texts'])
+    highlighted_df = read_highlight_nodes_df(highlighted_data)
+    
+    if add_edits:
+        edit_highlighted_df = read_highlight_nodes_df(edit_highlight_data)
+        highlighted_df = pd.concat([highlighted_df, edit_highlighted_df]).reset_index(drop=True)
+
     highlighted_df['segment_number_from_idx'] = highlighted_df.index.copy()
     
     #highlighted_df = highlighted_df.apply(lambda row: remove_periods(row), axis=1) ## changing this and moving to new filter function
