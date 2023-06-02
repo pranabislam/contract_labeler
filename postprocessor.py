@@ -11,6 +11,7 @@ import os
 import sys
 import post_process_helper
 import postprocessor_tests
+from collections import Counter
 
 '''
 Usage:
@@ -21,10 +22,14 @@ Usage:
 - if running on a single contract
  `$ python3 postprocessor.py --contract_dir contract_dir --contract_num contract_num`
  `$ python3 postprocessor.py --contract_dir ../labeling/contracts/ --contract_num 1`
+
+- if running on a single contract and loading contract after a manual edit
+ `$ python3 postprocessor.py --contract_dir contract_dir --contract_num contract_num --is_edit_mode`
+ `$ python3 postprocessor.py --contract_dir ../labeling/contracts/ --contract_num 1 --is_edit_mode
 '''
 
 
-def main(contract_num, path_to_contracts):
+def main(contract_num, path_to_contracts, is_edit_mode):
 
     # contract_num = 29
     # path_to_contracts = "/Users/rohith/Documents/Independent Study - DSGA1006/contracts/"
@@ -32,14 +37,18 @@ def main(contract_num, path_to_contracts):
     # path_to_contracts = sys.argv[2]
 
     all_nodes_df, exploded_highlight_df = \
-        get_highlight_full_dataframes(os.path.join(path_to_contracts,
-                                                   "labeled"),
-                                      contract_num)
+        get_highlight_full_dataframes(
+            os.path.join(path_to_contracts,
+            "labeled"),
+            contract_num
+        )
 
     filtered_highlight_df = \
-        filter_highlight_nodes_non_trivial(exploded_highlight_df,
-                                           contract_num,
-                                           path_to_contracts)
+        filter_highlight_nodes_non_trivial(
+            exploded_highlight_df,
+            contract_num,
+            path_to_contracts,
+        )
 
     # Replace new lines with spaces
     filtered_highlight_df['highlighted_segmented_text'] = (
@@ -63,7 +72,28 @@ def main(contract_num, path_to_contracts):
         if col in obj_cols:
             all_nodes_copy[col] = all_nodes_copy[col].astype(object)
 
+    highlight_edit_path = f'{contract_dir}drafts/contract_{contract_num}_highlight.csv'
+    merged_edit_path = f'{contract_dir}drafts/contract_{contract_num}_merged.csv'
+
+    if is_edit_mode:
+        
+        print('In edit mode, reading and filtering again')
+        assert os.path.exists(highlight_edit_path), 'no editing file found in staging area'
+        
+        # Read the manually edited file, re filter and proceed
+        filtered_highlight_df_copy = pd.read_csv(highlight_edit_path)
+        filtered_highlight_df = filter_highlight_nodes_non_trivial(
+            filtered_highlight_df_copy,
+            contract_num,
+            path_to_contracts,
+        )
+
     merge(all_nodes_copy, filtered_highlight_df)
+
+    ## Store for inspection before running tests and after merging (which is the main source of error)
+    all_nodes_copy.to_csv(merged_edit_path, index=False)
+    filtered_highlight_df.to_csv(highlight_edit_path, index=False)
+
     postprocessor_tests.test_merge(all_nodes_copy, filtered_highlight_df, all_nodes_copy)
     merged_tagged = tag_bies_for_highlights(all_nodes_copy)
 
@@ -78,7 +108,36 @@ def main(contract_num, path_to_contracts):
     if not os.path.exists(os.path.dirname(tagged_csv_savepath)):
         os.makedirs(os.path.dirname(tagged_csv_savepath))
 
+    ## Let's now re save if the merged test is passed so we can edit before the bies test
+    merged_tagged.to_csv(merged_edit_path, index=False)
+    filtered_highlight_df.to_csv(highlight_edit_path, index=False)
     # merged_tagged.to_csv(tagged_csv_savepath, index=True)
+    
+    #####
+    ##### OKAY I BELIEVE I SPOTTED THE PROBLEM:
+    ##### BIES TAG ORDER IS VIOLATED WHEN I REMOVE THE TWO ROWS IN THE TITLE SECTIONFROM HIGHLIGHT NODES BUT 
+    ##### DONT REMOVE THEM FROM ALL NODES. I CAN DO TWO THINGS:
+    ##### DO NOT REMOVE THEM FROM HIGHLIGHT NODES
+    ##### ADD READ MERGED EDITS HERE HERE TO READ BACK IN THE DATAFRAME EDITED
+    
+    if is_edit_mode:
+        
+        print('In edit mode, reading and filtering second round')
+        assert os.path.exists(highlight_edit_path), 'no highlight editing file found in staging area'
+        assert os.path.exists(merged_edit_path), 'no merged editing file found in staging area'
+        
+        # Read the manually edited file, re filter and proceed
+        filtered_highlight_df_copy = pd.read_csv(highlight_edit_path)
+        filtered_highlight_df = filter_highlight_nodes_non_trivial(
+            filtered_highlight_df_copy,
+            contract_num,
+            path_to_contracts,
+        )
+        merged_tagged = pd.read_csv(merged_edit_path)
+    
+    ### THINK ABOUT WHETHER OR NOT THIS SOLUTION MAKES SENSE 
+    ### MAYBE WE WANT TO EDIT THE REMOVE ROWS TO ONLY REMOVE ST!
+    
     postprocessor_tests.test_tag_bies_for_highlights(merged_tagged,
                                                      filtered_highlight_df)
     merged_tagged.to_csv(tagged_csv_savepath, index=True)
@@ -96,17 +155,24 @@ def remove_section_titles_that_start_with_period_and_space(df):
         lambda x: 1 if 'st' in x else 0
     )
 
-    rows_to_remove = df[df['period_space_section_title'] == True].copy(deep=True)
+    # Remove rows that have the period and are section titles.
+    # Some nodes can be periods but dont suffer from this section title specific problem
+    rows_to_remove = df[
+        (df['period_space_section_title'] == True) &
+        (df['is_section_title'] == 1)
+    ].copy(deep=True)
 
-    if len(rows_to_remove[rows_to_remove['is_section_title'] == 0]) > 0:
-        print('Warning, there were some rows that had the period space start but were not section titles. Please investigate. We are only removing rows that are section titles though')
-        print(rows_to_remove[rows_to_remove['is_section_title']])
+    print("+" * 50)
+    print(f'We are removing {len(rows_to_remove)} rows that are section titles that start with period')
+    print("+" * 50)
+    # if len(rows_to_remove[rows_to_remove['is_section_title'] == 0]) > 0:
+    #     print('Warning, there were some rows that had the period space start but were not section titles. Please investigate. We are removing these rows')
+    #     print(rows_to_remove[rows_to_remove['is_section_title'] == 0])
 
-    df = df[df['period_space_section_title'] == False].copy(deep=True)
+    df = df.drop(rows_to_remove.index)
     df = df.drop(columns=['period_space_section_title', 'is_section_title'])
 
     return df.reset_index(drop=True), rows_to_remove
-
 
 def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
     '''
@@ -114,6 +180,7 @@ def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
     we now filter on rows that are more nuanced and stem from labeler errors we observed
     from inspecting contracts
     '''
+
     df, rows_dropped1 = remove_section_titles_that_start_with_period_and_space(df)
     df, rows_dropped2 = remove_highlighted_duplicates(df)
 
@@ -123,9 +190,15 @@ def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
     removed_rows_savepath = os.path.join(path_to_contracts,
                                      "removed_rows",
                                      f"contract_{contract_num}_removed_rows.csv")
+    # dir doesnt exist, so create it
     if not os.path.exists(os.path.dirname(removed_rows_savepath)):
         os.makedirs(os.path.dirname(removed_rows_savepath))
-
+    
+    # if file is already there, lets save the new removed rows file to disk
+    if os.path.exists(removed_rows_savepath):
+        count = len(os.listdir(os.path.dirname(removed_rows_savepath)))
+        removed_rows_savepath = f"{removed_rows_savepath[:-4]}_v{count}.csv"
+    
     removed_rows.to_csv(removed_rows_savepath, index=True)
 
     return df
@@ -201,19 +274,21 @@ def remove_highlighted_duplicates(df):
 
         if len(cur.highlighted_segmented_text) < 1:
             drop_index.append(i)
-
         if prev.highlighted_segmented_text.startswith(cur.highlighted_segmented_text)\
         and prev.highlighted_xpaths == cur.highlighted_xpaths\
         and 'st' in cur.highlighted_labels:
             drop_index.append(i)
 
     #print(drop_index)
-
+    print(f"Dropping rows with index {drop_index} in remove highlight duplicates fx")
     dropped_rows = highlight_df.iloc[drop_index].copy(deep=True)
 
     highlight_df.drop(drop_index, inplace=True)
-    highlight_df.drop(columns='size', inplace=True)
-
+    
+    ## drop size if size is in the columns (double check this)
+    if 'size' in highlight_df.columns:
+        highlight_df.drop(columns='size', inplace=True)
+    
     final_group_sizes = highlight_df.groupby('segment_number_from_idx', as_index=False).size()
     highlight_df = pd.merge(highlight_df, final_group_sizes, on='segment_number_from_idx', how='left')
 
@@ -314,9 +389,18 @@ if __name__ == '__main__':
                                 use this for debugging or testing''',
                         default=None)
 
+    parser.add_argument('--is_edit_mode',
+                        help='''Enter --is_edit_mode if you would like to signify you
+                            want to load a contract after manually editing
+                            and saving to staging area
+                         ''',
+                        action="store_true")
+
     args = parser.parse_args()
 
     contract_dir = args.contract_dir
+    is_edit_mode = args.is_edit_mode
+    error_contract_container = []
 
     print("Processing...")
     # if the user passes a single contract num then skip
@@ -346,11 +430,15 @@ if __name__ == '__main__':
                     print("*" * 50)
                     continue
 
-                main(contract_num, contract_dir)
+                main(contract_num, contract_dir, is_edit_mode)
 
             except Exception as e:
+                error_contract_container.append(contract_num)
                 print(f"Error in contract_num={contract_num}, error={e}")
+        print("*" * 50)
+        print(f"Error on contracts {error_contract_container}")
+        print("*" * 50)
     else:
         contract_num = args.contract_num
 
-        main(contract_num, contract_dir)
+        main(contract_num, contract_dir, is_edit_mode)
