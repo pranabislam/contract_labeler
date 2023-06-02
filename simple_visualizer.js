@@ -2,6 +2,7 @@
 const urlToContractIdPath = 'https://raw.githubusercontent.com/mumose/contracts/main/url_to_contract_id.json';
 const colorMap = {
   t: 'red',
+  tn: 'orange',
   n: 'blue',
   st: 'green',
   sn: 'green',
