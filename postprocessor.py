@@ -11,6 +11,7 @@ import os
 import sys
 import post_process_helper
 import postprocessor_tests
+from collections import Counter
 
 '''
 Usage:
@@ -107,7 +108,36 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     if not os.path.exists(os.path.dirname(tagged_csv_savepath)):
         os.makedirs(os.path.dirname(tagged_csv_savepath))
 
+    ## Let's now re save if the merged test is passed so we can edit before the bies test
+    merged_tagged.to_csv(merged_edit_path, index=False)
+    filtered_highlight_df.to_csv(highlight_edit_path, index=False)
     # merged_tagged.to_csv(tagged_csv_savepath, index=True)
+    
+    #####
+    ##### OKAY I BELIEVE I SPOTTED THE PROBLEM:
+    ##### BIES TAG ORDER IS VIOLATED WHEN I REMOVE THE TWO ROWS IN THE TITLE SECTIONFROM HIGHLIGHT NODES BUT 
+    ##### DONT REMOVE THEM FROM ALL NODES. I CAN DO TWO THINGS:
+    ##### DO NOT REMOVE THEM FROM HIGHLIGHT NODES
+    ##### ADD READ MERGED EDITS HERE HERE TO READ BACK IN THE DATAFRAME EDITED
+    
+    if is_edit_mode:
+        
+        print('In edit mode, reading and filtering second round')
+        assert os.path.exists(highlight_edit_path), 'no highlight editing file found in staging area'
+        assert os.path.exists(merged_edit_path), 'no merged editing file found in staging area'
+        
+        # Read the manually edited file, re filter and proceed
+        filtered_highlight_df_copy = pd.read_csv(highlight_edit_path)
+        filtered_highlight_df = filter_highlight_nodes_non_trivial(
+            filtered_highlight_df_copy,
+            contract_num,
+            path_to_contracts,
+        )
+        merged_tagged = pd.read_csv(merged_edit_path)
+    
+    ### THINK ABOUT WHETHER OR NOT THIS SOLUTION MAKES SENSE 
+    ### MAYBE WE WANT TO EDIT THE REMOVE ROWS TO ONLY REMOVE ST!
+    
     postprocessor_tests.test_tag_bies_for_highlights(merged_tagged,
                                                      filtered_highlight_df)
     merged_tagged.to_csv(tagged_csv_savepath, index=True)
@@ -125,13 +155,21 @@ def remove_section_titles_that_start_with_period_and_space(df):
         lambda x: 1 if 'st' in x else 0
     )
 
-    rows_to_remove = df[df['period_space_section_title'] == True].copy(deep=True)
+    # Remove rows that have the period and are section titles.
+    # Some nodes can be periods but dont suffer from this section title specific problem
+    rows_to_remove = df[
+        (df['period_space_section_title'] == True) &
+        (df['is_section_title'] == 1)
+    ].copy(deep=True)
 
-    if len(rows_to_remove[rows_to_remove['is_section_title'] == 0]) > 0:
-        print('Warning, there were some rows that had the period space start but were not section titles. Please investigate. We are only removing rows that are section titles though')
-        print(rows_to_remove[rows_to_remove['is_section_title']])
+    print("+" * 50)
+    print(f'We are removing {len(rows_to_remove)} rows that are section titles that start with period')
+    print("+" * 50)
+    # if len(rows_to_remove[rows_to_remove['is_section_title'] == 0]) > 0:
+    #     print('Warning, there were some rows that had the period space start but were not section titles. Please investigate. We are removing these rows')
+    #     print(rows_to_remove[rows_to_remove['is_section_title'] == 0])
 
-    df = df[df['period_space_section_title'] == False].copy(deep=True)
+    df = df.drop(rows_to_remove.index)
     df = df.drop(columns=['period_space_section_title', 'is_section_title'])
 
     return df.reset_index(drop=True), rows_to_remove
@@ -236,19 +274,13 @@ def remove_highlighted_duplicates(df):
 
         if len(cur.highlighted_segmented_text) < 1:
             drop_index.append(i)
-        # if cur.exploded_highlight_node_order in [302, '302']:
-            # print('++++++++++++++++++++++++++++++++++++')
-            # print(prev.highlighted_segmented_text, cur.highlighted_segmented_text)
-            # print(prev.highlighted_xpaths, cur.highlighted_xpaths)
-            # print(prev.highlighted_labels, cur.highlighted_labels)
-            # print('+++++++++++++++++++++++++++++++++++')
         if prev.highlighted_segmented_text.startswith(cur.highlighted_segmented_text)\
         and prev.highlighted_xpaths == cur.highlighted_xpaths\
         and 'st' in cur.highlighted_labels:
             drop_index.append(i)
 
     #print(drop_index)
-    print(f"Dropping rows with index {drop_index}")
+    print(f"Dropping rows with index {drop_index} in remove highlight duplicates fx")
     dropped_rows = highlight_df.iloc[drop_index].copy(deep=True)
 
     highlight_df.drop(drop_index, inplace=True)
@@ -368,6 +400,7 @@ if __name__ == '__main__':
 
     contract_dir = args.contract_dir
     is_edit_mode = args.is_edit_mode
+    error_contract_container = []
 
     print("Processing...")
     # if the user passes a single contract num then skip
@@ -397,10 +430,14 @@ if __name__ == '__main__':
                     print("*" * 50)
                     continue
 
-                main(contract_num, contract_dir)
+                main(contract_num, contract_dir, is_edit_mode)
 
             except Exception as e:
+                error_contract_container.append(contract_num)
                 print(f"Error in contract_num={contract_num}, error={e}")
+        print("*" * 50)
+        print(f"Error on contracts {error_contract_container}")
+        print("*" * 50)
     else:
         contract_num = args.contract_num
 
