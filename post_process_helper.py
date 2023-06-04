@@ -30,6 +30,15 @@ def filter_all_nodes_df(df, xpaths_col):
 def filter_highlight_nodes_df(df):
     
     print('Filtering highlight nodes df now')
+    
+    ## This used to be the last filter in this function but we saw that there was an NA 
+    ## that existed somehow and fed into filter_all_nodes and then threw an error
+    original_length = len(df)
+    df = df.dropna()
+    
+    if original_length - len(df) > 0:
+        print(f'{original_length - len(df)} NA rows were dropped. THIS IS A PROBLEM.')
+    
     # We can apply this to highlight nodes without issue. In theory we should see 0 print statements so this 
     # can be a guardrail against unknown bugs
     df = filter_all_nodes_df(df, 'highlighted_xpaths')
@@ -43,12 +52,6 @@ def filter_highlight_nodes_df(df):
     if original_length - len(df) > 0:
         print(f'{original_length - len(df)} rows with DEL, DELETED were removed')
     
-    new_length = len(df)
-    df = df.dropna()
-    
-    if new_length - len(df) > 0:
-        print(f'{new_length - len(df)} NA rows were dropped. THIS IS A PROBLEM.')
-
     return df.reset_index(drop=True)
 
 

@@ -285,12 +285,22 @@ def remove_highlighted_duplicates(df):
 
         if len(cur.highlighted_segmented_text) < 1:
             drop_index.append(i)
-        if prev.highlighted_segmented_text.startswith(cur.highlighted_segmented_text)\
-        and prev.highlighted_xpaths == cur.highlighted_xpaths\
-        and 'st' in cur.highlighted_labels:
+        
+        text_match_condition = (
+            prev.highlighted_segmented_text
+            .startswith(cur.highlighted_segmented_text) or
+            
+            # Added this for some of the cases where the sst is a period 
+            # or special char longer than the prev
+            cur.highlighted_segmented_text
+            .startswith(prev.highlighted_segmented_text)
+        )
+
+        if (text_match_condition
+        and prev.highlighted_xpaths == cur.highlighted_xpaths
+        and 'st' in cur.highlighted_labels):
             drop_index.append(i)
 
-    #print(drop_index)
     print(f"Dropping rows with index {drop_index} in remove highlight duplicates fx")
     dropped_rows = highlight_df.iloc[drop_index].copy(deep=True)
 
