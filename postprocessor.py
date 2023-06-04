@@ -94,6 +94,9 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     all_nodes_copy.to_csv(merged_edit_path, index=False)
     filtered_highlight_df.to_csv(highlight_edit_path, index=False)
 
+    ## for contract 18, need to figure out how to manually merge 1 line then let the algo continue
+    # maybe i should make a remerge from idx function?
+
     postprocessor_tests.test_merge(all_nodes_copy, filtered_highlight_df, all_nodes_copy)
     merged_tagged = tag_bies_for_highlights(all_nodes_copy)
 
@@ -122,7 +125,7 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     
     if is_edit_mode:
         
-        print('In edit mode, reading and filtering second round')
+        print('In edit mode, reading and filtering third round')
         assert os.path.exists(highlight_edit_path), 'no highlight editing file found in staging area'
         assert os.path.exists(merged_edit_path), 'no merged editing file found in staging area'
         
