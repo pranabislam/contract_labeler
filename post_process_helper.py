@@ -30,6 +30,15 @@ def filter_all_nodes_df(df, xpaths_col):
 def filter_highlight_nodes_df(df):
     
     print('Filtering highlight nodes df now')
+    
+    ## This used to be the last filter in this function but we saw that there was an NA 
+    ## that existed somehow and fed into filter_all_nodes and then threw an error
+    original_length = len(df)
+    df = df.dropna()
+    
+    if original_length - len(df) > 0:
+        print(f'{original_length - len(df)} NA rows were dropped. THIS IS A PROBLEM.')
+    
     # We can apply this to highlight nodes without issue. In theory we should see 0 print statements so this 
     # can be a guardrail against unknown bugs
     df = filter_all_nodes_df(df, 'highlighted_xpaths')
@@ -43,12 +52,6 @@ def filter_highlight_nodes_df(df):
     if original_length - len(df) > 0:
         print(f'{original_length - len(df)} rows with DEL, DELETED were removed')
     
-    new_length = len(df)
-    df = df.dropna()
-    
-    if new_length - len(df) > 0:
-        print(f'{new_length - len(df)} NA rows were dropped. THIS IS A PROBLEM.')
-
     return df.reset_index(drop=True)
 
 
@@ -205,16 +208,24 @@ def create_all_nodes_df(all_nodes_data):
     df['all_nodes_ordering'] = df.index.copy()
     
     return df
-
-def create_highlight_nodes_df(highlighted_data):
-    
-    # Step 1: read in the data and do basic checks:
-    #highlight_text = ast.literal_eval(highlighted_data['texts'])
+def read_highlight_nodes_df(highlighted_data):
     highlighted_df = pd.DataFrame()
     highlighted_df['highlighted_xpaths'] = ast.literal_eval(highlighted_data['xpaths'])
     highlighted_df['highlighted_segmented_text'] = ast.literal_eval(highlighted_data['segmentedTexts'])
     highlighted_df['highlighted_labels'] = ast.literal_eval(highlighted_data['labels'])
     highlighted_df['highlighted_coordinates'] = ast.literal_eval(highlighted_data['c'])
+    return highlighted_df
+
+def create_highlight_nodes_df(highlighted_data, add_edits, edit_highlight_data):
+    
+    # Step 1: read in the data and do basic checks:
+    #highlight_text = ast.literal_eval(highlighted_data['texts'])
+    highlighted_df = read_highlight_nodes_df(highlighted_data)
+    
+    if add_edits:
+        edit_highlighted_df = read_highlight_nodes_df(edit_highlight_data)
+        highlighted_df = pd.concat([highlighted_df, edit_highlighted_df]).reset_index(drop=True)
+
     highlighted_df['segment_number_from_idx'] = highlighted_df.index.copy()
     
     #highlighted_df = highlighted_df.apply(lambda row: remove_periods(row), axis=1) ## changing this and moving to new filter function

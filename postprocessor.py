@@ -94,6 +94,9 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     all_nodes_copy.to_csv(merged_edit_path, index=False)
     filtered_highlight_df.to_csv(highlight_edit_path, index=False)
 
+    ## for contract 18, need to figure out how to manually merge 1 line then let the algo continue
+    # maybe i should make a remerge from idx function?
+
     postprocessor_tests.test_merge(all_nodes_copy, filtered_highlight_df, all_nodes_copy)
     merged_tagged = tag_bies_for_highlights(all_nodes_copy)
 
@@ -122,7 +125,7 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     
     if is_edit_mode:
         
-        print('In edit mode, reading and filtering second round')
+        print('In edit mode, reading and filtering third round')
         assert os.path.exists(highlight_edit_path), 'no highlight editing file found in staging area'
         assert os.path.exists(merged_edit_path), 'no merged editing file found in staging area'
         
@@ -206,14 +209,19 @@ def filter_highlight_nodes_non_trivial(df, contract_num, path_to_contracts):
 
 def get_highlight_full_dataframes(path_to_contracts, contract_num):
 
-    all_nodes_path = os.path.join(path_to_contracts,
-                                  f"contract_{contract_num}_all_nodes.json")
-    highlighted_nodes_path = os.path.join(path_to_contracts,
-                                          f"contract_{contract_num}_highlighted.json")
-    highlight_nodes_edits_path = os.path.join(path_to_contracts,
-                                              "edits",
-                                              f"contract_{contract_num}_highlighted.json"
-                                              )
+    all_nodes_path = os.path.join(
+        path_to_contracts,
+        f"contract_{contract_num}_all_nodes.json"
+    )
+    highlighted_nodes_path = os.path.join(
+        path_to_contracts,
+        f"contract_{contract_num}_highlighted.json"
+    )
+    highlight_nodes_edits_path = os.path.join(
+        path_to_contracts,
+        "edits",
+        f"contract_{contract_num}_highlighted.json"
+    )
     if not os.path.exists(os.path.dirname(highlight_nodes_edits_path)):
         os.makedirs(os.path.dirname(highlight_nodes_edits_path))
 
@@ -223,19 +231,22 @@ def get_highlight_full_dataframes(path_to_contracts, contract_num):
     with open(highlighted_nodes_path, encoding='UTF-8') as f:
         highlighted_data = json.load(f)
 
+    all_nodes_df = post_process_helper.create_all_nodes_df(all_nodes_data)
+    postprocessor_tests.test_filter_all_nodes_df(all_nodes_df)
+    
+    ## If we are incorporating edits
     highlighted_data_edits = None
-
     if os.path.exists(highlight_nodes_edits_path):
         with open(highlight_nodes_edits_path, encoding='UTF-8') as f:
             highlighted_data_edits = json.load(f)
-
-    all_nodes_df = post_process_helper.create_all_nodes_df(all_nodes_data)
-    postprocessor_tests.test_filter_all_nodes_df(all_nodes_df)
-    exploded_highlight_df = post_process_helper.create_highlight_nodes_df(highlighted_data)
+        exploded_highlight_df = post_process_helper.create_highlight_nodes_df(highlighted_data, True, highlighted_data_edits)
+    else:
+        exploded_highlight_df = post_process_helper.create_highlight_nodes_df(highlighted_data, False, highlighted_data_edits)
+    
     postprocessor_tests.test_filter_highlight_nodes_df(exploded_highlight_df)
 
-    if os.path.exists(highlight_nodes_edits_path):
-        highlight_edits = post_process_helper.create_highlight_nodes_df(highlighted_data_edits)
+    # if os.path.exists(highlight_nodes_edits_path):
+    #     highlight_edits = post_process_helper.create_highlight_nodes_df(highlighted_data_edits)
 
     if not os.path.exists(os.path.join(path_to_contracts, 'csvs')):
         os.makedirs(os.path.join(path_to_contracts, 'csvs'))
@@ -248,11 +259,11 @@ def get_highlight_full_dataframes(path_to_contracts, contract_num):
                                               'csvs',
                                               f'contract_{contract_num}_highlighted.csv'),
                                  index=True)
-    if os.path.exists(highlight_nodes_edits_path):
-        highlight_edits.to_csv(os.path.join(path_to_contracts,
-                                            'csvs',
-                                            f'contract_{contract_num}_edited.csv'),
-                               index=True)
+    # if os.path.exists(highlight_nodes_edits_path):
+    #     highlight_edits.to_csv(os.path.join(path_to_contracts,
+    #                                         'csvs',
+    #                                         f'contract_{contract_num}_edited.csv'),
+    #                            index=True)
 
     return all_nodes_df, exploded_highlight_df
 
@@ -274,12 +285,22 @@ def remove_highlighted_duplicates(df):
 
         if len(cur.highlighted_segmented_text) < 1:
             drop_index.append(i)
-        if prev.highlighted_segmented_text.startswith(cur.highlighted_segmented_text)\
-        and prev.highlighted_xpaths == cur.highlighted_xpaths\
-        and 'st' in cur.highlighted_labels:
+        
+        text_match_condition = (
+            prev.highlighted_segmented_text
+            .startswith(cur.highlighted_segmented_text) or
+            
+            # Added this for some of the cases where the sst is a period 
+            # or special char longer than the prev
+            cur.highlighted_segmented_text
+            .startswith(prev.highlighted_segmented_text)
+        )
+
+        if (text_match_condition
+        and prev.highlighted_xpaths == cur.highlighted_xpaths
+        and 'st' in cur.highlighted_labels):
             drop_index.append(i)
 
-    #print(drop_index)
     print(f"Dropping rows with index {drop_index} in remove highlight duplicates fx")
     dropped_rows = highlight_df.iloc[drop_index].copy(deep=True)
 

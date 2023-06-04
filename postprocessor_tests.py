@@ -100,7 +100,8 @@ def test_tag_bies_for_highlights(df, h_df):
         assert 'i_' in df.iloc[e_tag - 1].tagged_sequence \
         or 'b_' in df.iloc[e_tag - 1].tagged_sequence
         
-        assert 's_' in df.iloc[e_tag + 1].tagged_sequence \
+        assert e_tag == temp.index.max() \
+        or 's_' in df.iloc[e_tag + 1].tagged_sequence \
         or 'o' in df.iloc[e_tag + 1].tagged_sequence \
         or 'b_' in df.iloc[e_tag + 1].tagged_sequence
         
