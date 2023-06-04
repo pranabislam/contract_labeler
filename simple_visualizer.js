@@ -1,18 +1,19 @@
-//const fileUrl = 'https://raw.githubusercontent.com/pranabislam/file_host/main/url_to_json_url.json';
 const urlToContractIdPath = 'https://raw.githubusercontent.com/mumose/contracts/main/url_to_contract_id.json';
 const colorMap = {
   t: 'red',
-  tn: 'red',
+  tn: 'orange',
   n: 'blue',
   st: 'green',
   sn: 'green',
   sst: 'yellow',
   ssn: 'yellow',
   ssst: 'purple',
-  sssn: 'purple'
+  sssn: 'purple',
+  sssst: 'pink',
+  ssssn: 'pink'
 };
 
-const sectionNumbers = new Set(['sn','ssn','sssn']);
+const sectionNumbers = new Set(['sn','ssn','sssn', 'ssssn']);
 
 function addHBox(t,l,w,h,label){
   
@@ -72,8 +73,10 @@ fetch(urlToContractIdPath)
     
     console.log(window.location.href);    
     var contractId = data[window.location.href];
-    var highlightJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/labeled/contract_${contractId}_highlighted.json`;
+
+    var highlightJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/tagged_jsons/contract_${contractId}_highlighted.json`;
     var allJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/labeled/contract_${contractId}_all_nodes.json`;
+    const seen = new Set();
 
     console.log(highlightJsonUrl);
     console.log('-----------');
@@ -81,11 +84,14 @@ fetch(urlToContractIdPath)
     fetch(highlightJsonUrl)
       .then(response2 => response2.json())
       .then(data2 => {
-        const coordinates = JSON.parse(data2.c);
-        const labels = JSON.parse(data2.labels);
-        
-        for (let i = 0; i < coordinates.length; i++) {
-          addHBox(...coordinates[i], labels[i]);
+
+        var labels_coordinates = JSON.parse(JSON.stringify(data2));
+        console.log(labels_coordinates);
+        for (let i = 0; i < labels_coordinates.length; i++) {
+          if (!seen.has(labels_coordinates[i]['seg_num'])){
+            addHBox(...labels_coordinates[i]['c'], labels_coordinates[i]['labels']);
+            seen.add(labels_coordinates[i]['seg_num']);
+          }
         }
     });
     fetch(allJsonUrl)
