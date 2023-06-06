@@ -92,7 +92,7 @@ fetch(urlToContractIdPath)
         console.log(labels_coordinates);
         for (let i = 0; i < labels_coordinates.length; i++) {
           if (!seen.has(labels_coordinates[i]['seg_num'])){
-            addHBox(...labels_coordinates[i]['c'], labels_coordinates[i]['labels']);
+            addHBox(...labels_coordinates[i]['c'], labels_coordinates[i]['labels'], labels_coordinates[i]['preds']);
             seen.add(labels_coordinates[i]['seg_num']);
           }
         }
