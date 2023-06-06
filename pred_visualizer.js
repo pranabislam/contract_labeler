@@ -77,7 +77,7 @@ fetch(urlToContractIdPath)
     console.log(window.location.href);    
     var contractId = data[window.location.href];
 
-    var highlightJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/tagged_jsons/contract_${contractId}_highlighted.json`;
+    var highlightJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/preds/preds_jsons/contract_${contractId}_preds.json`;
     var allJsonUrl = `https://raw.githubusercontent.com/mumose/contracts/main/labeled/contract_${contractId}_all_nodes.json`;
     const seen = new Set();
 
