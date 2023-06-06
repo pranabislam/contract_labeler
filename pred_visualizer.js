@@ -1,21 +1,21 @@
 const urlToContractIdPath = 'https://raw.githubusercontent.com/mumose/contracts/main/url_to_contract_id.json';
 const colorMap = {
-  t: 'red',
-  tn: 'red',
-  n: 'blue',
-  st: 'green',
-  sn: 'green',
-  sst: 'yellow',
-  ssn: 'yellow',
-  ssst: 'purple',
-  sssn: 'purple',
-  sssst: 'pink',
-  ssssn: 'pink'
-};
+    t: [255, 0, 0],        // Red
+    tn: [255, 0, 0],       // Red
+    n: [0, 0, 255],        // Blue
+    st: [0, 128, 0],       // Green
+    sn: [0, 128, 0],       // Green
+    sst: [255, 255, 0],    // Yellow
+    ssn: [255, 255, 0],    // Yellow
+    ssst: [128, 0, 128],   // Purple
+    sssn: [128, 0, 128],   // Purple
+    sssst: [255, 192, 203], // Pink
+    ssssn: [255, 192, 203]  // Pink
+  };
 
 //const sectionNumbers = new Set(['sn','ssn','sssn', 'ssssn', 'tn']);
 
-function addHBox(t,l,w,h,label,pred){
+function addHBox(t,l,w,h,tagged_sequence,pred){
   
   const hBox = document.createElement('div');
   hBox.style.position = 'absolute';
@@ -23,14 +23,10 @@ function addHBox(t,l,w,h,label,pred){
   hBox.style.left = l * document.documentElement.scrollWidth + 'px';
   hBox.style.width = w * document.documentElement.scrollWidth + 'px';
   hBox.style.height = h * document.documentElement.scrollHeight + 'px';
-  hBox.style.backgroundColor = colorMap[label];
-  hBox.style.opacity = '0.5';
+  hBox.style.backgroundColor = `rgba(${colorMap[pred.substring(2)].join(',')}, 0.5)`;
   hBox.style.zIndex = '99999';
-  if (label != pred) {
-    hBox.style.border = `5px dotted red`;
-  }
-  else {
-    hBox.style.border = `5px dotted green`;
+  if (tagged_sequence != pred) {
+    hBox.style.border = `2px solid rgba(255, 0, 0, 1)`;
   }
   document.body.appendChild(hBox);
 }
@@ -92,7 +88,7 @@ fetch(urlToContractIdPath)
         console.log(labels_coordinates);
         for (let i = 0; i < labels_coordinates.length; i++) {
           if (!seen.has(labels_coordinates[i]['seg_num'])){
-            addHBox(...labels_coordinates[i]['c'], labels_coordinates[i]['labels'], labels_coordinates[i]['preds']);
+            addHBox(...labels_coordinates[i]['c'], labels_coordinates[i]['tagged_sequence'], labels_coordinates[i]['preds']);
             seen.add(labels_coordinates[i]['seg_num']);
           }
         }
