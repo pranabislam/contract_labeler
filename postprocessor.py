@@ -87,6 +87,7 @@ def main(contract_num, path_to_contracts, is_edit_mode):
             contract_num,
             path_to_contracts,
         )
+        all_nodes_copy = pd.read_csv(merged_edit_path)
 
     merge(all_nodes_copy, filtered_highlight_df)
 
@@ -107,6 +108,7 @@ def main(contract_num, path_to_contracts, is_edit_mode):
 
     tagged_csv_savepath = os.path.join(path_to_contracts,
                                        "tagged",
+                                       "train",
                                        f"contract_{contract_num}_tagged.csv")
     if not os.path.exists(os.path.dirname(tagged_csv_savepath)):
         os.makedirs(os.path.dirname(tagged_csv_savepath))
@@ -114,14 +116,6 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     ## Let's now re save if the merged test is passed so we can edit before the bies test
     merged_tagged.to_csv(merged_edit_path, index=False)
     filtered_highlight_df.to_csv(highlight_edit_path, index=False)
-    # merged_tagged.to_csv(tagged_csv_savepath, index=True)
-    
-    #####
-    ##### OKAY I BELIEVE I SPOTTED THE PROBLEM:
-    ##### BIES TAG ORDER IS VIOLATED WHEN I REMOVE THE TWO ROWS IN THE TITLE SECTIONFROM HIGHLIGHT NODES BUT 
-    ##### DONT REMOVE THEM FROM ALL NODES. I CAN DO TWO THINGS:
-    ##### DO NOT REMOVE THEM FROM HIGHLIGHT NODES
-    ##### ADD READ MERGED EDITS HERE HERE TO READ BACK IN THE DATAFRAME EDITED
     
     if is_edit_mode:
         
@@ -442,10 +436,24 @@ if __name__ == '__main__':
             print(f"Postprocessing contract {contract_num}")
             print("*" * 50)
             try:
-                tagged_csv_savepath = os.path.join(contract_dir,
-                                                "tagged",
-                                                f"contract_{contract_num}_tagged.csv")
-                if os.path.exists(tagged_csv_savepath):
+                tagged_csv_savepath_train = os.path.join(
+                    contract_dir,
+                    "tagged",
+                    'train',
+                    f"contract_{contract_num}_tagged.csv")
+                tagged_csv_savepath_val = os.path.join(
+                    contract_dir,
+                    "tagged",
+                    'val',
+                    f"contract_{contract_num}_tagged.csv")
+                tagged_csv_savepath_test = os.path.join(
+                    contract_dir,
+                    "tagged",
+                    'test',
+                    f"contract_{contract_num}_tagged.csv")
+                if (os.path.exists(tagged_csv_savepath_train) or
+                    os.path.exists(tagged_csv_savepath_val) or
+                    os.path.exists(tagged_csv_savepath_test)):
                     print("*" * 50)
                     print(f"contract_{contract_num}_tagged.csv already exists. Skipping!")
                     print("*" * 50)
