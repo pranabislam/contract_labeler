@@ -1,7 +1,7 @@
 const urlToContractIdPath = 'https://raw.githubusercontent.com/mumose/contracts/main/url_to_contract_id.json';
 const colorMap = {
   t: 'red',
-  tn: 'orange',
+  tn: 'red',
   n: 'blue',
   st: 'green',
   sn: 'green',
@@ -13,7 +13,7 @@ const colorMap = {
   ssssn: 'pink'
 };
 
-const sectionNumbers = new Set(['sn','ssn','sssn', 'ssssn']);
+const sectionNumbers = new Set(['sn','ssn','sssn', 'ssssn', 'tn']);
 
 function addHBox(t,l,w,h,label){
   
