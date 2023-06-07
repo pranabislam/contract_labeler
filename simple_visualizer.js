@@ -27,7 +27,7 @@ function addHBox(t,l,w,h,label){
   hBox.style.opacity = '0.5';
   hBox.style.zIndex = '99999';
   if (sectionNumbers.has(label)) {
-    hBox.style.border = `2px solid black`;
+    hBox.style.border = `1px solid black`;
   }
   document.body.appendChild(hBox);
 }
