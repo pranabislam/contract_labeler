@@ -25,9 +25,6 @@ function addHBox(t,l,w,h,tagged_sequence,pred){
   hBox.style.height = h * document.documentElement.scrollHeight + 'px';
   hBox.style.backgroundColor = `rgba(${colorMap[pred.substring(2)].join(',')}, 0.5)`;
   hBox.style.zIndex = '99999';
-  if (sectionNumbers.has(pred.substring(2))) {
-    hBox.style.border = `1px solid rgba(0, 0, 0, 0.5)`;
-  }
   if (tagged_sequence != pred) {
     hBox.style.border = `1px solid rgba(255, 0, 0, 1)`;
   }
