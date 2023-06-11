@@ -56,6 +56,11 @@ def main(contract_num, path_to_contracts, is_edit_mode):
     )
     all_nodes_df['text'] = all_nodes_df.text.str.replace('\n', ' ')
 
+    # Handle node splitting case when needed and do it before edit handling
+    all_nodes_df = post_process_helper.split_all_nodes_nodes_if_necessary(
+        all_nodes_df,
+        filtered_highlight_df
+    )
 
     obj_cols = [
         'highlighted_xpaths',
